@@ -6,9 +6,12 @@
  * Se sirve como PNG optimizado en varios tamaños. En el menú y el pie va como
  * imagen decorativa acompañada de texto accesible; en el hero es el elemento
  * gráfico principal.
+ *
+ * `variant` permite comparar el original con las versiones repintadas (ver
+ * ~/lib/logo.ts y la página /logo).
  */
 import { Image } from 'astro:assets';
-import logo from '~/assets/logo.png';
+import { LOGOS, DEFAULT_LOGO, type LogoVariant } from '~/lib/logo';
 
 interface Props {
   /** Ancho renderizado en CSS px al tamaño mayor previsto. */
@@ -17,12 +20,21 @@ interface Props {
   /** El hero lo carga de inmediato; el resto puede esperar. */
   eager?: boolean;
   alt?: string;
+  variant?: LogoVariant;
 }
-const { width, class: className, eager = false, alt = '' } = Astro.props;
+const {
+  width,
+  class: className,
+  eager = false,
+  alt = '',
+  variant = DEFAULT_LOGO,
+} = Astro.props;
+
+const src = LOGOS[variant];
 ---
 
 <Image
-  src={logo}
+  src={src}
   alt={alt}
   width={width}
   densities={[1, 2]}
