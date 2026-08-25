@@ -51,7 +51,7 @@ const VARIANTS: { id: LogoVariant; title: string; desc: string }[] = [
               <Logo width={420} variant={v.id} alt={`Logotipo ${v.title}, sin realce`} />
               <figcaption>Tal cual</figcaption>
             </figure>
-            <figure class="boosted" style={`--logo-mask: url(${LOGOS[v.id].src});`}>
+            <figure class="boosted" style={`--logo-mask: url("${LOGOS[v.id].src}");`}>
               <Logo width={420} variant={v.id} alt={`Logotipo ${v.title}, con realce`} />
               <span class="gloss" aria-hidden="true"><span class="gloss-band"></span></span>
               <figcaption>Con realce y brillo</figcaption>

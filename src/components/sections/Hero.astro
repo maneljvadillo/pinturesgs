@@ -50,7 +50,7 @@ const logoMask = LOGOS[DEFAULT_LOGO].src;
     </div>
 
     <div class="hero-gs">
-      <div class="hero-gs-inner" style={`--logo-mask: url(${logoMask});`}>
+      <div class="hero-gs-inner" style={`--logo-mask: url("${logoMask}");`}>
         <Logo width={520} eager alt={`${SITE.name}`} />
         <span class="hero-gs-gloss" aria-hidden="true"><span class="gloss-band"></span></span>
       </div>
