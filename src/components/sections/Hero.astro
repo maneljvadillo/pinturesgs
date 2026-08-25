@@ -9,10 +9,17 @@
  *   2. .hero-inner        el mensaje y el logotipo, siempre por encima.
  */
 import Logo from '~/components/Logo.astro';
+import BrushCursor from '~/components/BrushCursor.astro';
 import { SITE } from '~/data/site';
 ---
 
 <section class="hero brush-zone" id="top">
+  <!--
+    El cursor de brocha se monta desde el hero a propósito: así no existe en
+    las demás páginas ni por debajo de las demás secciones.
+  -->
+  <BrushCursor />
+
   <div class="hero-color-layer" aria-hidden="true"></div>
 
   <!--
@@ -38,7 +45,9 @@ import { SITE } from '~/data/site';
     </div>
 
     <div class="hero-gs">
-      <Logo width={520} eager alt={`${SITE.name}`} />
+      <div class="hero-gs-inner">
+        <Logo width={520} eager alt={`${SITE.name}`} />
+      </div>
     </div>
   </div>
 
@@ -59,7 +68,11 @@ import { SITE } from '~/data/site';
   /* ── Capa 0: el color de debajo ───────────────────────────────────── */
   .hero-color-layer {
     position: absolute;
-    inset: 0;
+    /*
+      Se sale del hero por los cuatro lados: la deriva mueve la capa entera y
+      este margen evita que asome un borde sin pintar.
+    */
+    inset: -18%;
     z-index: 0;
     /*
       Campo de color denso. Los círculos son pequeños y se solapan a propósito:
@@ -96,13 +109,23 @@ import { SITE } from '~/data/site';
       radial-gradient(circle at 84% 92%, var(--c-yellow) 0%, var(--c-yellow) 9%,  transparent 21%),
       radial-gradient(circle at 97% 76%, var(--c-orange) 0%, var(--c-orange) 8%,  transparent 20%),
       var(--c-turq);
-    filter: saturate(1.8) contrast(1.1);
-    background-size: 180% 180%;
-    animation: colorDrift 20s ease-in-out infinite alternate;
+    /* Colores a plena potencia: lo que se descubre bajo el trazo tiene que
+       leerse como pintura recién puesta, no como un pastel. */
+    filter: saturate(2.6) contrast(1.22) brightness(1.04);
+    /*
+      La deriva va por `transform`, no por `background-position`. Animar la
+      posición del fondo obliga a repintar 28 degradados radiales en cada
+      fotograma; con transform la capa se rasteriza una vez y el compositor la
+      mueve. Además baja de 20 s a 8 s: bajo la brocha los colores cambian
+      ahora más de dos veces más rápido.
+    */
+    will-change: transform;
+    backface-visibility: hidden;
+    animation: colorDrift 8s ease-in-out infinite alternate;
   }
   @keyframes colorDrift {
-    0%   { background-position: 0% 0%; }
-    100% { background-position: 100% 55%; }
+    0%   { transform: translate3d(-5%, -3.5%, 0) scale(1.04); }
+    100% { transform: translate3d(5%, 3.5%, 0) scale(1.16); }
   }
   /* Trama diagonal muy sutil: da textura de pintura en vez de degradado liso. */
   .hero-color-layer::before {
@@ -152,31 +175,61 @@ import { SITE } from '~/data/site';
   }
   .hero-ctas { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
 
-  /* ── El logotipo: crece de golpe, rebota y luego respira ──────────── */
+  /*
+    ── El logotipo ────────────────────────────────────────────────────────
+    Dos elementos anidados porque son dos animaciones con vidas distintas:
+
+      .hero-gs        el "pintado": un canto diagonal barre el logotipo de
+                      izquierda a derecha, como una pasada de brocha. Va en el
+                      contenedor para no pelearse con las transformaciones.
+      .hero-gs-inner  la entrada (sube, crece, se pasa de rosca y vuelve) y,
+                      encadenada detrás, la respiración en reposo.
+
+    Todo se anima con transform / opacity / clip-path: nada de esto provoca
+    reflow ni repinta el logotipo.
+  */
   .hero-gs {
     justify-self: end;
     user-select: none;
     width: clamp(220px, 30vw, 480px);
+    animation: logoWipe 1.05s var(--ease-out-soft) .05s both;
+  }
+  .hero-gs-inner {
     animation:
-      logoIntro 1.4s var(--ease-overshoot) both,
-      logoFloat 6s ease-in-out 1.4s infinite;
+      logoIntro 1.25s var(--ease-overshoot) both,
+      logoBreathe 7s ease-in-out 1.3s infinite;
     filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
+    will-change: transform;
+    backface-visibility: hidden;
   }
-  .hero-gs :global(img) { width: 100%; height: auto; }
+  .hero-gs :global(img) { width: 100%; height: auto; display: block; }
 
+  /*
+    El recorte final se va bastante más allá de la caja (de -44% a 160%) para
+    que la sombra proyectada no quede cortada al terminar la animación.
+  */
+  @keyframes logoWipe {
+    0%   { clip-path: polygon(-30% -40%, -30% -40%, -44% 140%, -44% 140%); }
+    100% { clip-path: polygon(-30% -40%, 174% -40%, 160% 140%, -44% 140%); }
+  }
   @keyframes logoIntro {
-    0%   { transform: scale(0.12); opacity: 0; }
-    60%  { transform: scale(1.10); opacity: 1; }
-    80%  { transform: scale(0.96); }
-    100% { transform: scale(1);    opacity: 1; }
+    0%   { opacity: 0; transform: translate3d(0, 54px, 0) scale(.58) rotate(-9deg); }
+    55%  { opacity: 1; transform: translate3d(0, -12px, 0) scale(1.10) rotate(3.5deg); }
+    78%  { opacity: 1; transform: translate3d(0, 4px, 0)  scale(.965) rotate(-1.4deg); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0)    scale(1)    rotate(0deg); }
   }
-  @keyframes logoFloat {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-10px); }
+  /* Reposo: flota, se balancea un grado escaso y respira. Lo justo para que
+     no parezca una imagen pegada, sin robarle atención al mensaje. */
+  @keyframes logoBreathe {
+    0%   { transform: translate3d(0, 0, 0)     rotate(-0.7deg) scale(1); }
+    50%  { transform: translate3d(0, -13px, 0) rotate(0.9deg)  scale(1.018); }
+    100% { transform: translate3d(0, 0, 0)     rotate(-0.7deg) scale(1); }
   }
-  /* Con movimiento reducido el logotipo aparece, pero ni rebota ni flota. */
+  /* Con movimiento reducido el logotipo aparece, pero ni rebota ni respira. */
   @media (prefers-reduced-motion: reduce) {
-    .hero-gs { animation: none; opacity: 1; transform: none; }
+    .hero-gs { animation: none; clip-path: none; }
+    .hero-gs-inner { animation: none; opacity: 1; transform: none; }
+    .hero-color-layer { animation: none; }
   }
 
   @media (max-width: 900px) {
@@ -184,6 +237,13 @@ import { SITE } from '~/data/site';
     .hero-message, .hero-sub { margin-left: auto; margin-right: auto; }
     .hero-ctas { justify-content: center; }
     .hero-gs { justify-self: center; width: clamp(160px, 45vw, 260px); margin-top: 10px; }
+    /* En pantallas pequeñas el mismo recorrido se ve exagerado: se acorta. */
+    .hero-gs-inner { animation-name: logoIntro, logoBreatheSm; }
+    @keyframes logoBreatheSm {
+      0%   { transform: translate3d(0, 0, 0)    rotate(-0.5deg) scale(1); }
+      50%  { transform: translate3d(0, -8px, 0) rotate(0.6deg)  scale(1.014); }
+      100% { transform: translate3d(0, 0, 0)    rotate(-0.5deg) scale(1); }
+    }
   }
 
   /* ── Indicador de scroll ──────────────────────────────────────────── */
@@ -217,5 +277,7 @@ import { SITE } from '~/data/site';
 
 <script>
   import { initHeroReveal } from '~/scripts/hero-reveal';
+  import { initBrushCursor } from '~/scripts/brush-cursor';
   initHeroReveal();
+  initBrushCursor();
 </script>

@@ -1,7 +1,9 @@
 ---
 /**
  * Cursor de brocha. Sustituye a la flecha del sistema, pero SÓLO dentro de las
- * zonas marcadas con `.brush-zone` (el hero y la herramienta de pintar).
+ * zonas marcadas con `.brush-zone`, que hoy es únicamente el hero de la home.
+ * Por eso el componente se monta desde `Hero.astro` y no desde el layout: en
+ * el resto de páginas y secciones ni siquiera llega al HTML.
  *
  * Se activa únicamente en dispositivos con puntero fino: en táctil no hay
  * cursor que sustituir, y forzarlo dejaría un icono flotando sin sentido.
@@ -10,19 +12,24 @@
 <div class="brush-cursor" id="brushCursor" aria-hidden="true">
   <svg width="46" height="46" viewBox="0 0 46 46">
     <defs>
+      <!-- Paleta a tope de saturación: es la pintura que la brocha arrastra. -->
       <linearGradient id="brushGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#FF1E3C" />
-        <stop offset="18%" stop-color="#FF7A00" />
-        <stop offset="36%" stop-color="#FFD400" />
-        <stop offset="54%" stop-color="#00D26A" />
-        <stop offset="70%" stop-color="#00C2D1" />
-        <stop offset="86%" stop-color="#2979FF" />
-        <stop offset="100%" stop-color="#C400FF" />
+        <stop offset="0%" stop-color="#FF0033" />
+        <stop offset="18%" stop-color="#FF6A00" />
+        <stop offset="36%" stop-color="#FFE000" />
+        <stop offset="54%" stop-color="#00F07A" />
+        <stop offset="70%" stop-color="#00E5F5" />
+        <stop offset="86%" stop-color="#1466FF" />
+        <stop offset="100%" stop-color="#D400FF" />
       </linearGradient>
     </defs>
     <rect x="4" y="4" width="8" height="20" rx="1.5" fill="#8B5E34" />
     <rect x="3" y="22" width="10" height="6" fill="#B0B0AC" />
-    <path d="M3 28 C3 28 2 40 5 44 C6.5 45.7 9.5 45.7 11 44 C14 40 13 28 13 28 Z" fill="url(#brushGrad)" />
+    <path
+      class="brush-bristles"
+      d="M3 28 C3 28 2 40 5 44 C6.5 45.7 9.5 45.7 11 44 C14 40 13 28 13 28 Z"
+      fill="url(#brushGrad)"
+    />
   </svg>
 </div>
 
@@ -33,13 +40,27 @@
     width: 46px; height: 46px;
     pointer-events: none;
     z-index: 200;
-    transform: translate(-1000px, -1000px);
+    transform: translate3d(-1000px, -1000px, 0);
     opacity: 0;
-    transition: opacity .25s ease;
+    transition: opacity .2s ease;
+    /* Capa propia en el compositor: el script sólo escribe `transform`, así
+       que la brocha se mueve sin repintar nada. */
     will-change: transform;
-    filter: saturate(1.6) contrast(1.08) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    backface-visibility: hidden;
+    filter: saturate(2.1) contrast(1.12) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
   }
   .brush-cursor.show { opacity: 1; }
+
+  /* El color de la pintura gira entero en 2,4 s. El filtro va sólo sobre las
+     cerdas (46 px): no toca ni el mango ni la virola, y es un coste ínfimo. */
+  .brush-bristles {
+    animation: brushHue 2.4s linear infinite;
+    transform-origin: 8px 36px;
+  }
+  @keyframes brushHue {
+    from { filter: hue-rotate(0deg) saturate(1.25); }
+    to   { filter: hue-rotate(360deg) saturate(1.25); }
+  }
 
   /* Oculta el cursor del sistema dentro de las zonas de brocha. */
   :global(.brush-zone) { cursor: none; }
@@ -47,6 +68,12 @@
   /* Con puntero grueso (táctil) no se dibuja nunca. */
   @media (hover: none), (pointer: coarse) {
     .brush-cursor { display: none; }
+    :global(.brush-zone) { cursor: auto; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .brush-cursor { display: none; }
+    .brush-bristles { animation: none; }
     :global(.brush-zone) { cursor: auto; }
   }
 </style>
