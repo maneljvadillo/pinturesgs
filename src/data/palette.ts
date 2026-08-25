@@ -75,3 +75,45 @@ export const COLOR_NAMES: Record<string, string> = Object.fromEntries(
 export function colorName(hex: string): string {
   return COLOR_NAMES[hex.toUpperCase()] ?? 'Color personalizado';
 }
+
+/**
+ * COMBINACIONES PARA LAS TRES PAREDES
+ *
+ * La pregunta que trae a la gente a esta herramienta no es "¿qué color me
+ * gusta?" sino "¿qué colores pegan entre sí?". Cada combinación aplica un
+ * color a cada pared de una vez, con el mismo criterio que se usa en obra: una
+ * pared con carácter y dos que la acompañan, nunca tres protagonistas.
+ *
+ * Todos los tonos salen de la paleta de arriba: lo que se ve en pantalla es
+ * pintura que la empresa puede servir, no un color inventado.
+ */
+export type WallCombo = {
+  name: string;
+  /** Qué transmite. Es lo que se lee bajo el nombre. */
+  mood: string;
+  /** [pared izquierda, pared del fondo, tabique derecho] */
+  colors: [string, string, string];
+};
+
+export const COMBOS: WallCombo[] = [
+  {
+    name: 'Nórdico',
+    mood: 'Luminoso y tranquilo',
+    colors: ['#EDEAE0', '#95D5B2', '#DCDAD5'],
+  },
+  {
+    name: 'Cálido',
+    mood: 'Acogedor, de casa vivida',
+    colors: ['#E8DCC8', '#C2540A', '#DCCBAE'],
+  },
+  {
+    name: 'Elegante',
+    mood: 'Sobrio, con una pared que manda',
+    colors: ['#C9C7C1', '#1B3A5C', '#FAFAF8'],
+  },
+  {
+    name: 'Mediterráneo',
+    mood: 'Fresco, de luz de costa',
+    colors: ['#A8DADC', '#0C8599', '#F7F5F0'],
+  },
+];

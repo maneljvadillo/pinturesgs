@@ -82,6 +82,16 @@ export const PHOTOS: PhotoEntry[] = [
   { key: 'salon', pexelsId: 20390760, stock: true, width: 1600,
     crop: { left: 615 / 1600, top: 0, width: 985 / 1600, height: 1 },
     alt: 'Salón con sofá gris, mesa de centro redonda, planta de interior y pared de ladrillo pintada de blanco' },
+
+  // ── Sala de la herramienta ───────────────────────────────────────────────
+  // NO es una foto de banco ni una obra real: es una sala generada a medida
+  // para "Pinta el teu espai", con tres planos de pared limpios y muebles bajos
+  // que casi no tapan. Se hizo así a propósito, porque en una foto cualquiera
+  // las paredes se recortan mal y el color acaba derramándose sobre los
+  // muebles. `stock: false` para que no la reclame `npm run fetch:photos` ni
+  // aparezca en el aviso de fotos de banco.
+  { key: 'sala-tres-paredes', stock: false,
+    alt: 'Sala vacía con tres paredes visibles, suelo de roble en espiga, sofá gris, mesa auxiliar y una planta' },
 ];
 
 export const PHOTO_BY_KEY: Record<string, PhotoEntry> = Object.fromEntries(

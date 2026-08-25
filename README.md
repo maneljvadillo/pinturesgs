@@ -81,10 +81,11 @@ componente: todo vive en `src/data/`.**
 | `npm run check` | Comprueba tipos en `.astro` y `.ts` |
 | `npm run fetch:photos` | Vuelve a descargar las fotos de banco del manifiesto |
 
-Dos utilidades que sólo hay que lanzar si cambia la foto del salón o el logotipo:
+Dos utilidades que sólo hay que lanzar si cambia la sala de la herramienta o
+el logotipo:
 
 ```bash
-node scripts/build-wall-mask.mjs --debug   # máscara de pared de la herramienta
+node scripts/build-wall-masks.mjs --debug  # máscaras de las tres paredes
 node scripts/build-social-images.mjs       # og.png y apple-touch-icon.png
 ```
 

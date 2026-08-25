@@ -36,7 +36,17 @@ const TOOL_RADIUS: Record<Exclude<ToolName, 'rellenar'>, number> = {
 };
 
 /** Tope de zonas que puede añadir el usuario, para no disparar la memoria. */
-const MAX_USER_REGIONS = 6;
+const MAX_USER_REGIONS = 4;
+
+/**
+ * Las tres paredes de la sala, cada una en un canal de la máscara
+ * (ver scripts/build-wall-masks.mjs). El orden manda en el selector de zonas.
+ */
+const WALLS = [
+  { id: 'w-izq', label: 'Pared izquierda', channel: 0 as const },
+  { id: 'w-fondo', label: 'Pared del fondo', channel: 1 as const },
+  { id: 'w-tabique', label: 'Tabique derecho', channel: 2 as const },
+];
 
 export async function initPaintTool(): Promise<void> {
   const section = document.getElementById('pinta');
@@ -67,13 +77,13 @@ export async function initPaintTool(): Promise<void> {
 
   // ── Carga ───────────────────────────────────────────────────────────────
   let photo: HTMLImageElement;
-  let wallShape: HTMLCanvasElement;
+  let wallShapes: HTMLCanvasElement[];
   let luma: LumaMap;
   try {
     const [p, m] = await Promise.all([loadImage(photoUrl), loadImage(maskUrl)]);
     photo = p;
     luma = buildLumaMap(p, W, H);
-    wallShape = maskToAlpha(m, W, H);
+    wallShapes = WALLS.map((wall) => maskToAlpha(m, W, H, wall.channel));
   } catch {
     loading.textContent = 'No se ha podido cargar la herramienta.';
     return;
@@ -96,10 +106,14 @@ export async function initPaintTool(): Promise<void> {
   function makePaintCanvas(): HTMLCanvasElement { return makeCanvas(paintW, paintH); }
 
   function seed(): void {
-    const wall = makeRegion('r0', 'Pared del fondo', 'pared', wallShape, luma);
-    wall.paint = makePaintCanvas();
-    regions = [wall];
-    selectedId = wall.id;
+    regions = WALLS.map((wall, i) => {
+      const r = makeRegion(wall.id, wall.label, 'pared', wallShapes[i]!, luma);
+      r.paint = makePaintCanvas();
+      return r;
+    });
+    // Arranca seleccionada la del fondo: es la más grande y la que primero
+    // mira todo el mundo.
+    selectedId = 'w-fondo';
     nextId = 1;
     rebuildIdMap();
   }
@@ -170,7 +184,10 @@ export async function initPaintTool(): Promise<void> {
       const tag = document.createElement('span');
       tag.className = 'region-tag' + (r.id === selectedId ? ' selected' : '');
       tag.textContent = r.label;
-      tag.style.left = `${c.x * 100}%`;
+      // Se mantiene dentro del marco: el tabique llega hasta el borde y su
+      // centro de masas queda tan a la derecha que la etiqueta se salía.
+      const x = Math.min(Math.max(c.x, 0.14), 0.86);
+      tag.style.left = `${x * 100}%`;
       tag.style.top = `${c.y * 100}%`;
       regionLayer.appendChild(tag);
     }
@@ -280,8 +297,10 @@ export async function initPaintTool(): Promise<void> {
   }
 
   // ── Marcar una zona nueva ───────────────────────────────────────────────
+  const userRegionCount = (): number => regions.filter((r) => r.kind === 'rect').length;
+
   function setMarking(on: boolean): void {
-    if (on && regions.length - 1 >= MAX_USER_REGIONS) {
+    if (on && userRegionCount() >= MAX_USER_REGIONS) {
       showToast(`Puedes marcar hasta ${MAX_USER_REGIONS} zonas.`);
       return;
     }
@@ -296,7 +315,7 @@ export async function initPaintTool(): Promise<void> {
   function addRegion(rect: FractionRect): void {
     const id = `r${nextId++}`;
     const shape = rectToAlpha(rect, W, H);
-    const r = makeRegion(id, `Zona ${regions.length}`, 'rect', shape, luma, rect);
+    const r = makeRegion(id, `Zona ${userRegionCount() + 1}`, 'rect', shape, luma, rect);
     r.paint = makePaintCanvas();
     regions.push(r);
     selectedId = id;
@@ -450,6 +469,35 @@ export async function initPaintTool(): Promise<void> {
   // ── Paleta ──────────────────────────────────────────────────────────────
   document.querySelectorAll<HTMLElement>('.swatch-cell').forEach((cell) => {
     cell.addEventListener('click', () => applyColor(cell.dataset.hex!, cell));
+  });
+
+  /*
+    Combinaciones: pintan las tres paredes de una vez. Van en UN solo punto del
+    historial, no tres, porque para quien lo usa es una sola decisión: deshacer
+    debe devolverle la sala anterior entera, no dejarle dos paredes a medias.
+  */
+  function applyCombo(colors: string[], btn: HTMLElement): void {
+    const walls = regions.filter((r) => r.kind === 'pared');
+    walls.forEach((r, i) => {
+      const hex = colors[i];
+      if (!hex) return;
+      cloneForWrite(r);
+      r.color = hex;
+      fillRegion(r);
+    });
+    currentColor = colors[walls.findIndex((r) => r.id === selectedId)] ?? currentColor;
+    document.querySelectorAll('.combo-btn.active').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.swatch-cell.active').forEach((c) => c.classList.remove('active'));
+    btn.classList.add('active');
+    history.push(regions, selectedId);
+    renderWallPicker();
+    render();
+    syncDesignSummary();
+    showToast(`Combinación ${btn.dataset.name} aplicada — puedes retocar cada pared.`);
+  }
+
+  document.querySelectorAll<HTMLElement>('.combo-btn').forEach((btn) => {
+    btn.addEventListener('click', () => applyCombo(btn.dataset.combo!.split(','), btn));
   });
   customColor.addEventListener('input', () => applyColor(customColor.value));
 

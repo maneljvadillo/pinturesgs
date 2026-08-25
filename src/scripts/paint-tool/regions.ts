@@ -3,9 +3,9 @@
  *
  * Cada zona necesita tres lienzos del tamaño de la foto:
  *
- *   shape  — alfa: dónde está la zona. Para la pared del fondo viene de la
- *            máscara generada en build (scripts/build-wall-mask.mjs); para las
- *            zonas que marca el usuario es un rectángulo.
+ *   shape  — alfa: dónde está la zona. Para las tres paredes viene de las
+ *            máscaras generadas en build (scripts/build-wall-masks.mjs), una
+ *            por canal; para las zonas que marca el usuario es un rectángulo.
  *   shade  — gris: el sombreado real de la foto, normalizado contra su punto
  *            más claro. Es lo que hace que el color respete sombras y textura.
  *   paint  — alfa: dónde ha pintado el usuario. Empieza vacío.
@@ -36,16 +36,27 @@ export function buildLumaMap(photo: HTMLImageElement | HTMLCanvasElement, w: num
   return { data: luma, width: w, height: h };
 }
 
-/** Convierte una imagen en escala de grises en una máscara alfa. */
-export function maskToAlpha(mask: HTMLImageElement, w: number, h: number): HTMLCanvasElement {
+/**
+ * Convierte UN CANAL de la imagen de máscaras en una máscara alfa.
+ *
+ * Las tres paredes viajan en un solo PNG, una por canal (R = izquierda,
+ * G = fondo, B = tabique): una sola descarga y las tres siempre sincronizadas
+ * con la foto. `channel` elige cuál se extrae.
+ */
+export function maskToAlpha(
+  mask: HTMLImageElement,
+  w: number,
+  h: number,
+  channel: 0 | 1 | 2 = 0,
+): HTMLCanvasElement {
   const src = makeCanvas(w, h);
   const sg = src.getContext('2d', { willReadFrequently: true })!;
   sg.drawImage(mask, 0, 0, w, h);
   const img = sg.getImageData(0, 0, w, h);
   const d = img.data;
   for (let p = 0; p < d.length; p += 4) {
-    // El gris de la máscara pasa a ser el alfa; el color, blanco.
-    d[p + 3] = d[p]!;
+    // El valor del canal pasa a ser el alfa; el color, blanco.
+    d[p + 3] = d[p + channel]!;
     d[p] = 255; d[p + 1] = 255; d[p + 2] = 255;
   }
   const out = makeCanvas(w, h);

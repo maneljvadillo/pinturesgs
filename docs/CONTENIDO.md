@@ -63,19 +63,29 @@ referencia" desaparece de la sección de servicios.
 
 Tamaño recomendado: 1400 px de ancho como mínimo. Astro genera el resto.
 
-### La foto de la herramienta de pintar
+### La sala de la herramienta de pintar
 
-`salon.jpg` es especial: lleva asociada una máscara de pared generada en el
-build. Si se cambia hay que **recalibrar** la máscara:
+`sala-tres-paredes.jpg` es especial: no es una foto de banco ni una obra real,
+sino una sala hecha a medida para la herramienta, con tres planos de pared
+limpios y muebles bajos que casi no tapan. Lleva asociadas TRES máscaras —una
+por pared— que viajan juntas en `public/room/sala-paredes.png`, una por canal
+de color (R = izquierda, G = fondo, B = tabique).
+
+Si se cambia la foto hay que **recalibrar** las máscaras:
 
 ```bash
-node scripts/build-wall-mask.mjs --debug
+node scripts/build-wall-masks.mjs --debug
 ```
 
-y ajustar las constantes del principio de ese archivo (plano de la pared,
-objetos que la tapan y umbrales de color) mirando
-`public/room/_debug-mask.jpg`, que pinta de magenta lo que se considera pared.
-El propio script explica el método.
+y ajustar las constantes del principio de ese archivo —los polígonos de cada
+pared, los muebles que la tapan y los umbrales de color, que van por pared
+porque la luz cae mucho de izquierda a derecha— mirando
+`public/room/_debug-paredes.jpg`, que pinta cada pared de un color. El propio
+script explica el método y de dónde sale cada medida.
+
+La foto vieja del salón de ladrillo (`salon.jpg` + `salon-mask.png` +
+`scripts/build-wall-mask.mjs`, en singular) sigue en el repositorio por si se
+quiere volver a ella: era de una sola pared.
 
 ---
 

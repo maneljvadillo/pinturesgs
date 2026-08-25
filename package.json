@@ -9,7 +9,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "fetch:photos": "node scripts/fetch-photos.mjs"
+    "fetch:photos": "node scripts/fetch-photos.mjs",
+    "build:walls": "node scripts/build-wall-masks.mjs --debug"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
