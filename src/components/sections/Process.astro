@@ -3,6 +3,9 @@
  * PROCESO — 5 pasos. Los puntos se iluminan al entrar en pantalla.
  */
 import { PROCESS_STEPS } from '~/data/process';
+
+/** Un color por paso: el proceso avanza y el color con él. */
+const ACCENTS = ['red', 'orange', 'green', 'turq', 'blue'];
 ---
 
 <section class="process" id="proceso">
@@ -14,7 +17,10 @@ import { PROCESS_STEPS } from '~/data/process';
 
     <ol class="process-steps">
       {PROCESS_STEPS.map((s, i) => (
-        <li class="process-step">
+        <li
+          class="process-step"
+          style={`--accent: var(--c-${ACCENTS[i % ACCENTS.length]}); --accent-ink: var(--c-${ACCENTS[i % ACCENTS.length]}-ink);`}
+        >
           <span class="ps-dot" aria-hidden="true"></span>
           <div>
             <span class="ps-num">{String(i + 1).padStart(2, '0')}</span>
@@ -28,7 +34,11 @@ import { PROCESS_STEPS } from '~/data/process';
 </section>
 
 <style>
-  .process { padding: var(--section-y) 0; background: var(--gesso); }
+  .process {
+    --accent: var(--c-green);
+    padding: var(--section-y) 0;
+    background: var(--gesso);
+  }
   .process-steps { position: relative; margin-top: 64px; list-style: none; }
 
   .process-step {
@@ -42,17 +52,55 @@ import { PROCESS_STEPS } from '~/data/process';
   @media (max-width: 700px) { .process-step { grid-template-columns: 40px 1fr; gap: 16px; } }
 
   .ps-dot {
-    width: 14px; height: 14px;
+    position: relative;
+    z-index: 1;
+    width: 16px; height: 16px;
     border-radius: 50%;
     background: var(--stone-light);
-    margin-left: 23px;
+    margin-left: 22px;
     margin-top: 6px;
-    transition: background .4s ease, transform .4s var(--ease-overshoot);
+    transition: background .45s ease, transform .45s var(--ease-overshoot), box-shadow .45s ease;
   }
-  @media (max-width: 700px) { .ps-dot { margin-left: 13px; } }
-  .process-step.lit .ps-dot { background: var(--terracotta); transform: scale(1.15); }
+  @media (max-width: 700px) { .ps-dot { margin-left: 12px; } }
+  .process-step.lit .ps-dot {
+    background: var(--accent);
+    transform: scale(1.2);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
 
-  .ps-num { display: block; font-family: var(--serif); font-size: 0.82rem; color: var(--stone); margin-bottom: 6px; }
+  /*
+    Hilo de pintura entre un paso y el siguiente. Se rellena de arriba abajo
+    cuando el paso se enciende: el color va "goteando" por la lista según se
+    baja. Es `scaleY`, no `height`, para no recalcular el diseño.
+  */
+  .process-step::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 26px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 25%, transparent));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform .8s var(--ease-out-soft) .1s;
+  }
+  @media (max-width: 700px) { .process-step::before { left: 20px; } }
+  .process-step:last-child::before { display: none; }
+  .process-step.lit::before { transform: scaleY(1); }
+
+  .process-step.lit .ps-num { color: var(--accent-ink, var(--stone)); }
+
+  .ps-num {
+    display: block;
+    font-family: var(--serif);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--stone);
+    margin-bottom: 6px;
+    transition: color .45s ease;
+  }
   .ps-title { font-family: var(--serif); font-size: 1.45rem; margin-bottom: 8px; }
   .ps-desc { color: var(--stone); font-size: 0.9rem; max-width: 440px; line-height: 1.5; }
 </style>

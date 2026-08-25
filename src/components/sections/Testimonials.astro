@@ -4,6 +4,8 @@
  * reales. No se publica como opinión de un cliente algo que nadie ha dicho.
  */
 import { TESTIMONIALS } from '~/data/testimonials';
+
+const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
 ---
 
 <section class="testimonials" id="testimonios">
@@ -14,8 +16,12 @@ import { TESTIMONIALS } from '~/data/testimonials';
     </div>
 
     <ul class="testi-grid">
-      {TESTIMONIALS.map((t) => (
-        <li class="testi-card">
+      {TESTIMONIALS.map((t, i) => (
+        <li
+          class="testi-card"
+          data-reveal
+          style={`--accent: var(--c-${ACCENTS[i % ACCENTS.length]}); --reveal-i: ${i % 3};`}
+        >
           <p class="testi-stars" aria-label={`${t.stars} de 5 estrellas`}>
             <span aria-hidden="true">{'★'.repeat(t.stars)}</span>
           </p>
@@ -33,7 +39,11 @@ import { TESTIMONIALS } from '~/data/testimonials';
 </section>
 
 <style>
-  .testimonials { padding: 110px 0; background: #EFEDE7; }
+  .testimonials {
+    --accent: var(--c-orange);
+    padding: 110px 0;
+    background: #EFEDE7;
+  }
 
   .testi-grid {
     display: grid;
@@ -44,13 +54,29 @@ import { TESTIMONIALS } from '~/data/testimonials';
   }
   @media (max-width: 900px) { .testi-grid { grid-template-columns: 1fr; } }
 
+  /* Cada tarjeta lleva su franja de pintura arriba y se levanta un poco al
+     pasar por encima. Nada más: es una opinión, no un anuncio. */
   .testi-card {
+    position: relative;
     background: #fff;
     border: 1px solid var(--stone-light);
     border-radius: 6px;
     padding: 30px;
+    overflow: hidden;
+    transition: transform .4s var(--ease-out-soft), box-shadow .4s ease;
   }
-  .testi-stars { color: var(--terracotta); font-size: 1rem; margin-bottom: 14px; letter-spacing: 2px; }
+  .testi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: var(--accent);
+  }
+  .testi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.09);
+  }
+  .testi-stars { color: var(--accent); font-size: 1.05rem; margin-bottom: 14px; letter-spacing: 2px; }
   .testi-text {
     font-family: var(--serif);
     font-size: 1.05rem;

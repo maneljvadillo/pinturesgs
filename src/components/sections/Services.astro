@@ -10,6 +10,13 @@ import { Image } from 'astro:assets';
 import { SERVICES, VISIBLE_TAGS } from '~/data/services';
 import { photoSrc, photoAlt } from '~/lib/photos';
 import { HAS_STOCK_PHOTOS } from '~/data/photos';
+
+/**
+ * Cada servicio se pinta de un color de la marca. Es una rotación fija (no
+ * aleatoria) para que el orden sea siempre el mismo entre visitas y entre
+ * servidor y cliente.
+ */
+const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', 'pink'];
 ---
 
 <section class="services" id="servicios">
@@ -25,8 +32,13 @@ import { HAS_STOCK_PHOTOS } from '~/data/photos';
         const visible = s.tasks.slice(0, VISIBLE_TAGS);
         const hidden = s.tasks.slice(VISIBLE_TAGS);
         const tagsId = `st-tags-${si}`;
+        const accent = ACCENTS[si % ACCENTS.length];
         return (
-          <li class="service-tile grain">
+          <li
+            class="service-tile grain"
+            data-reveal
+            style={`--accent: var(--c-${accent}); --reveal-i: ${si % 3};`}
+          >
             {img ? (
               <Image
                 class="st-bg"
@@ -41,6 +53,7 @@ import { HAS_STOCK_PHOTOS } from '~/data/photos';
               <div class="st-bg st-bg--fallback" aria-hidden="true"></div>
             )}
 
+            <span class="st-tint" aria-hidden="true"></span>
             <span class="st-emoji" aria-hidden="true">{s.emoji}</span>
 
             <div class="st-content">
@@ -79,7 +92,11 @@ import { HAS_STOCK_PHOTOS } from '~/data/photos';
 </section>
 
 <style>
-  .services { padding: var(--section-y) 0 100px; background: var(--gesso); }
+  .services {
+    --accent: var(--c-turq);
+    padding: var(--section-y) 0 100px;
+    background: var(--gesso);
+  }
 
   .services-grid {
     display: grid;
@@ -97,6 +114,39 @@ import { HAS_STOCK_PHOTOS } from '~/data/photos';
     overflow: hidden;
     background: #2a2925;
   }
+
+  /*
+    Franja de color al pie de cada servicio: es lo que hace que la rejilla se
+    lea como una paleta y no como nueve fotos oscuras. Al pasar por encima
+    crece, como una pincelada que se carga más.
+  */
+  .service-tile::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 5px;
+    background: var(--accent);
+    z-index: 3;
+    transform-origin: bottom;
+    transition: height .35s var(--ease-out-soft);
+  }
+  .service-tile:hover::after,
+  .service-tile:focus-within::after { height: 11px; }
+
+  /* Baño de color sobre la foto al pasar por encima. `multiply` mantiene el
+     detalle de la imagen en vez de taparla con un plano de color. */
+  .st-tint {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--accent);
+    mix-blend-mode: multiply;
+    opacity: 0;
+    transition: opacity .45s var(--ease-out-soft);
+    pointer-events: none;
+  }
+  .service-tile:hover .st-tint,
+  .service-tile:focus-within .st-tint { opacity: 0.42; }
 
   .st-bg {
     position: absolute;
@@ -117,13 +167,23 @@ import { HAS_STOCK_PHOTOS } from '~/data/photos';
     filter: saturate(1.3);
   }
 
+  /* El icono va sobre una pastilla del color del servicio: da un punto de
+     color permanente arriba, no sólo al pasar el ratón. */
   .st-emoji {
     position: absolute;
-    top: 20px; left: 22px;
-    font-size: 1.7rem;
-    z-index: 2;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+    top: 18px; left: 18px;
+    width: 46px; height: 46px;
+    display: grid;
+    place-items: center;
+    font-size: 1.45rem;
+    z-index: 3;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    transition: transform .4s var(--ease-overshoot);
   }
+  .service-tile:hover .st-emoji,
+  .service-tile:focus-within .st-emoji { transform: scale(1.08) rotate(-6deg); }
 
   .st-content {
     position: absolute;
@@ -174,7 +234,9 @@ import { HAS_STOCK_PHOTOS } from '~/data/photos';
     white-space: nowrap;
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
+    transition: border-color .3s ease, background .3s ease;
   }
+  .service-tile:hover .tag-chip { border-color: rgba(255, 255, 255, 0.9); }
 
   .tag-more {
     font-size: 0.68rem;

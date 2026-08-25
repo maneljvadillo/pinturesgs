@@ -5,11 +5,14 @@
  * dice debajo para que nadie los tome por buenos.
  */
 import { STATS, AUDIENCES } from '~/data/site';
+
+/** Cada cifra con su color; los textos se quedan en tinta por contraste. */
+const ACCENTS = ['red', 'green', 'blue', 'purple', 'orange', 'turq'];
 ---
 
 <section class="about" id="nosotros">
   <div class="wrap about-grid">
-    <div>
+    <div data-reveal="left">
       <span class="eyebrow">Sobre PINTURESGS</span>
       <h2>Desde una pared hasta un gran proyecto.</h2>
       <p class="lead">
@@ -22,10 +25,10 @@ import { STATS, AUDIENCES } from '~/data/site';
       </ul>
     </div>
 
-    <div>
+    <div data-reveal>
       <dl class="stats-grid">
-        {STATS.map((s) => (
-          <div class="stat-box">
+        {STATS.map((s, i) => (
+          <div class="stat-box" style={`--accent: var(--c-${ACCENTS[i % ACCENTS.length]}-ink);`}>
             <dd class="stat-num">{s.num.value}</dd>
             <dt class="stat-label">{s.label}</dt>
             {s.num.pending && <dd class="placeholder-note">dato pendiente</dd>}
@@ -37,7 +40,11 @@ import { STATS, AUDIENCES } from '~/data/site';
 </section>
 
 <style>
-  .about { padding: var(--section-y) 0; background: #EFEDE7; }
+  .about {
+    --accent: var(--c-blue);
+    padding: var(--section-y) 0;
+    background: #EFEDE7;
+  }
 
   .about-grid {
     display: grid;
@@ -56,6 +63,16 @@ import { STATS, AUDIENCES } from '~/data/site';
     padding: 7px 14px;
     border: 1px solid var(--stone-light);
     border-radius: 20px;
+    transition: border-color .3s ease, background .3s ease, transform .3s var(--ease-out-soft);
+  }
+  .about-targets li:nth-child(4n+1) { --accent: var(--c-red); }
+  .about-targets li:nth-child(4n+2) { --accent: var(--c-green); }
+  .about-targets li:nth-child(4n+3) { --accent: var(--c-blue); }
+  .about-targets li:nth-child(4n+4) { --accent: var(--c-orange); }
+  .about-targets li:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    transform: translateY(-2px);
   }
 
   .stats-grid {
@@ -66,7 +83,9 @@ import { STATS, AUDIENCES } from '~/data/site';
     border: 1px solid var(--stone-light);
   }
   .stat-box { background: #EFEDE7; padding: 28px 22px; }
-  .stat-num { font-family: var(--serif); font-size: 2.3rem; color: var(--terracotta); margin: 0; }
+  /* Cada cifra de un color: la rejilla de datos es lo primero que se mira y
+     así entra color donde antes había cuatro números iguales. */
+  .stat-num { font-family: var(--serif); font-size: 2.3rem; color: var(--accent); margin: 0; }
   .stat-label { font-size: 0.76rem; color: var(--stone); margin-top: 6px; }
   .stat-box .placeholder-note { margin: 4px 0 0; }
 </style>

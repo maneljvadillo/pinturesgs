@@ -8,6 +8,9 @@ import { PROJECTS } from '~/data/projects';
 import { photoSrc, photoAlt } from '~/lib/photos';
 
 const anySample = PROJECTS.some((p) => p.sample);
+
+/** Un color de marca por proyecto, en rotación fija. */
+const ACCENTS = ['yellow', 'turq', 'pink', 'green', 'orange', 'blue'];
 ---
 
 <section class="projects on-dark" id="proyectos">
@@ -18,10 +21,15 @@ const anySample = PROJECTS.some((p) => p.sample);
     </div>
 
     <ul class="project-grid">
-      {PROJECTS.map((p) => {
+      {PROJECTS.map((p, pi) => {
         const img = photoSrc(p.photo);
+        const accent = ACCENTS[pi % ACCENTS.length];
         return (
-          <li class="project-card grain">
+          <li
+            class="project-card grain"
+            data-reveal="zoom"
+            style={`--accent: var(--c-${accent}); --reveal-i: ${pi % 3};`}
+          >
             {img ? (
               <Image
                 class="pc-bg"
@@ -35,7 +43,9 @@ const anySample = PROJECTS.some((p) => p.sample);
             ) : (
               <div class="pc-bg" style={`background:${p.fallback};`} aria-hidden="true"></div>
             )}
+            <span class="pc-tint" aria-hidden="true"></span>
             <div class="pc-overlay">
+              <span class="pc-stroke" aria-hidden="true"></span>
               <h3 class="pc-title">{p.title}</h3>
               <p class="pc-tags">{p.tags.join(' · ')}</p>
             </div>
@@ -54,7 +64,12 @@ const anySample = PROJECTS.some((p) => p.sample);
 </section>
 
 <style>
-  .projects { padding: 110px 0; background: var(--ink); color: var(--gesso); }
+  .projects {
+    --accent: var(--c-yellow);
+    padding: 110px 0;
+    background: var(--ink);
+    color: var(--gesso);
+  }
   .projects .section-head :global(.eyebrow) { color: #8f8b83; }
   .projects :global(h2) { color: var(--gesso); }
   .projects .photo-note { color: #8f8b83; }
@@ -86,10 +101,43 @@ const anySample = PROJECTS.some((p) => p.sample);
   }
   .project-card:hover .pc-bg { transform: scale(1.06); }
 
+  /*
+    Baño de color sobre la obra. Aquí el fondo es oscuro, así que se usa
+    `screen` en vez de `multiply`: aclara y tiñe en lugar de ensuciar.
+  */
+  .pc-tint {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: var(--accent);
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity .5s var(--ease-out-soft);
+    pointer-events: none;
+  }
+  .project-card:hover .pc-tint,
+  .project-card:focus-within .pc-tint { opacity: 0.3; }
+
+  /* Pincelada de color que aparece con el título. */
+  .pc-stroke {
+    display: block;
+    width: 52px;
+    height: 5px;
+    margin-bottom: 12px;
+    border-radius: 6px 8px 7px 5px / 5px 7px 6px 8px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .45s var(--ease-out-soft) .1s;
+  }
+  .project-card:hover .pc-stroke,
+  .project-card:focus-within .pc-stroke { transform: scaleX(1); }
+
   /* La pincelada: el overlay entra con un corte diagonal, no en horizontal. */
   .pc-overlay {
     position: absolute;
     inset: 0;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -109,5 +157,6 @@ const anySample = PROJECTS.some((p) => p.sample);
   /* En táctil no hay hover: la información se muestra siempre. */
   @media (hover: none) {
     .pc-overlay { clip-path: polygon(0 100%, 100% 100%, 100% 0%, 0% 20%); }
+    .pc-stroke { transform: scaleX(1); }
   }
 </style>

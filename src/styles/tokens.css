@@ -40,6 +40,34 @@
     var(--c-turq), var(--c-blue), var(--c-purple), var(--c-pink), var(--c-red)
   );
 
+  /* La misma paleta en línea. Se usa en botones, filetes y separadores: es la
+     firma de color de la marca y aparece en todas las secciones. */
+  --rainbow-line: linear-gradient(
+    90deg,
+    var(--c-red), var(--c-orange), var(--c-yellow), var(--c-green),
+    var(--c-turq), var(--c-blue), var(--c-purple), var(--c-pink)
+  );
+
+  /*
+    Variantes oscuras de la paleta, PARA TEXTO. Los colores de arriba son de
+    pintura: sobre el fondo claro se quedan en 2-3:1 de contraste y WCAG AA
+    pide 4.5:1 para texto pequeño. Estos bajan la luminosidad lo justo para
+    pasar el listón sin dejar de ser el mismo color.
+  */
+  --c-red-ink: #C1102A;
+  --c-orange-ink: #A85400;
+  --c-yellow-ink: #8A6A00;
+  --c-green-ink: #067A42;
+  --c-turq-ink: #06707A;
+  --c-blue-ink: #1B4FCC;
+  --c-purple-ink: #8A00B4;
+  --c-pink-ink: #C01480;
+
+  /* Color de acento de la sección o de la tarjeta. Cada bloque lo redefine;
+     así un mismo componente sale de un color u otro sin duplicar CSS. */
+  --accent: var(--terracotta);
+  --accent-ink: var(--terracotta);
+
   /* ── Tipografía ────────────────────────────────────────────────────── */
   --serif: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

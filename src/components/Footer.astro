@@ -48,10 +48,20 @@ const emailIsReal = !CONTACT.email.pending;
 </footer>
 
 <style>
+  /* El pie se cierra con una pasada de brocha de toda la paleta en vez de
+     con una línea gris. */
   footer {
+    position: relative;
     padding: 76px 0 28px;
     background: var(--gesso);
     border-top: 1px solid var(--stone-light);
+  }
+  footer::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 0; right: 0;
+    height: 4px;
+    background: var(--rainbow-line);
   }
   .footer-top {
     display: grid;

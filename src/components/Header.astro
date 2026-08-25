@@ -43,6 +43,14 @@ const links = [
       </button>
     </nav>
   </div>
+
+  <!--
+    Filete de progreso: se pinta de izquierda a derecha según se baja por la
+    página. Va con `animation-timeline: scroll()`, sin JavaScript ni listeners
+    de scroll; en los navegadores que aún no lo soportan sencillamente no se
+    muestra y el menú se queda como estaba.
+  -->
+  <span class="head-progress" aria-hidden="true"></span>
 </header>
 
 <style>
@@ -55,7 +63,7 @@ const links = [
     border-bottom: 1px solid transparent;
   }
   header.solid {
-    background: rgba(250, 250, 248, 0.92);
+    background: rgba(250, 250, 248, 0.94);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     padding: 14px 0;
@@ -63,6 +71,31 @@ const links = [
   }
 
   nav { display: flex; align-items: center; justify-content: space-between; }
+
+  .head-progress { display: none; }
+  @supports (animation-timeline: scroll()) {
+    .head-progress {
+      display: block;
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 3px;
+      background: var(--rainbow-line);
+      transform: scaleX(0);
+      transform-origin: left;
+      opacity: 0;
+      transition: opacity .4s ease;
+      animation: headProgress linear both;
+      animation-timeline: scroll(root block);
+    }
+    header.solid .head-progress { opacity: 1; }
+    @keyframes headProgress {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .head-progress { display: none; }
+  }
 
   .logo { display: flex; align-items: center; }
   .logo :global(img) {
@@ -74,16 +107,20 @@ const links = [
 
   .nav-links { display: flex; gap: 36px; align-items: center; }
   .nav-links a { font-size: 0.86rem; position: relative; }
+  /* El subrayado del menú es una pincelada con la paleta entera. */
   .nav-links a:not(.nav-cta)::after {
     content: '';
     position: absolute;
-    left: 0; bottom: -4px;
-    width: 0; height: 1px;
-    background: var(--terracotta);
-    transition: width .3s ease;
+    left: 0; bottom: -5px;
+    width: 100%; height: 3px;
+    border-radius: 3px;
+    background: var(--rainbow-line);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .32s var(--ease-out-soft);
   }
   .nav-links a:not(.nav-cta):hover::after,
-  .nav-links a:not(.nav-cta):focus-visible::after { width: 100%; }
+  .nav-links a:not(.nav-cta):focus-visible::after { transform: scaleX(1); }
 
   .nav-cta {
     border: 1px solid var(--ink);
@@ -93,9 +130,11 @@ const links = [
     transition: background .3s ease, color .3s ease, border-color .3s ease;
   }
   .nav-cta:hover, .nav-cta:focus-visible {
-    background: var(--terracotta);
-    border-color: var(--terracotta);
+    background: var(--rainbow-line);
+    background-size: 180% 100%;
+    border-color: transparent;
     color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
   }
 
   .nav-toggle {
