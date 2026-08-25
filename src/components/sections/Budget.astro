@@ -101,7 +101,12 @@ import { PROJECT_TYPES } from '~/data/site';
 </section>
 
 <style>
-  .budget { padding: var(--section-y) 0; background: var(--ink); color: var(--gesso); }
+  .budget {
+    --accent: var(--c-pink);
+    padding: var(--section-y) 0;
+    background: var(--ink);
+    color: var(--gesso);
+  }
   .budget .section-head :global(.eyebrow) { color: #8f8b83; }
   .budget :global(h2) { color: var(--gesso); max-width: 600px; }
   .budget .section-head > :global(p) { color: #c9c5bc; }
@@ -138,7 +143,9 @@ import { PROJECT_TYPES } from '~/data/site';
     transition: border-color .25s ease;
   }
   .field input::placeholder, .field textarea::placeholder { color: #827E73; }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--terracotta); }
+  /* Sobre fondo oscuro el turquesa se ve mucho mejor que el terracota y
+     mantiene el foco dentro de la paleta de la marca. */
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--c-turq); }
   .field select option { color: #111; }
   .field textarea { resize: vertical; }
 

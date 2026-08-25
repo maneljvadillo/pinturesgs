@@ -10,7 +10,12 @@
  */
 import Logo from '~/components/Logo.astro';
 import BrushCursor from '~/components/BrushCursor.astro';
+import { LOGOS, DEFAULT_LOGO } from '~/lib/logo';
 import { SITE } from '~/data/site';
+
+/* El brillo de pintura húmeda se recorta con la silueta del propio logotipo:
+   sin esto sería una banda blanca rectangular cruzando el aire. */
+const logoMask = LOGOS[DEFAULT_LOGO].src;
 ---
 
 <section class="hero brush-zone" id="top">
@@ -45,8 +50,9 @@ import { SITE } from '~/data/site';
     </div>
 
     <div class="hero-gs">
-      <div class="hero-gs-inner">
+      <div class="hero-gs-inner" style={`--logo-mask: url(${logoMask});`}>
         <Logo width={520} eager alt={`${SITE.name}`} />
+        <span class="hero-gs-gloss" aria-hidden="true"><span class="gloss-band"></span></span>
       </div>
     </div>
   </div>
@@ -195,14 +201,64 @@ import { SITE } from '~/data/site';
     animation: logoWipe 1.05s var(--ease-out-soft) .05s backwards;
   }
   .hero-gs-inner {
+    position: relative;
     animation:
       logoIntro 1.25s var(--ease-overshoot) both,
       logoBreathe 7s ease-in-out 1.3s infinite;
-    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
+    /* Dos sombras: una pegada al canto, que da grosor de pintura, y la de
+       siempre, amplia y suave, que lo separa del fondo. */
+    filter:
+      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
+      drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
     will-change: transform;
     backface-visibility: hidden;
   }
-  .hero-gs :global(img) { width: 100%; height: auto; display: block; }
+  /* Realce de color del logotipo: más pigmento, sin tocar el archivo. */
+  .hero-gs :global(img) {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: saturate(1.4) contrast(1.1);
+  }
+
+  /*
+    Brillo de pintura húmeda. La banda es un hijo que se desplaza con
+    `transform` (el compositor lo mueve solo) y el contenedor la recorta con la
+    silueta del logotipo, así el reflejo nunca se sale de la pintura.
+  */
+  .hero-gs-gloss {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    -webkit-mask-image: var(--logo-mask);
+    mask-image: var(--logo-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+  .gloss-band {
+    position: absolute;
+    top: -30%; bottom: -30%;
+    left: -60%;
+    width: 60%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.10) 35%,
+      rgba(255, 255, 255, 0.55) 50%,
+      rgba(255, 255, 255, 0.10) 65%,
+      transparent 100%
+    );
+    transform: translate3d(0, 0, 0);
+    animation: logoGloss 7s ease-in-out 2s infinite;
+  }
+  @keyframes logoGloss {
+    0%       { transform: translate3d(0, 0, 0); }
+    38%, 100% { transform: translate3d(310%, 0, 0); }
+  }
 
   /*
     El recorte se sale mucho de la caja (de -74% a 214%) porque si no recorta
@@ -245,6 +301,7 @@ import { SITE } from '~/data/site';
   @media (prefers-reduced-motion: reduce) {
     .hero-gs { animation: none; clip-path: none; }
     .hero-gs-inner { animation: none; opacity: 1; transform: none; }
+    .hero-gs-gloss { display: none; }
     .hero-color-layer { animation: none; }
   }
 

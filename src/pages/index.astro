@@ -8,6 +8,7 @@ import Process from '~/components/sections/Process.astro';
 import Testimonials from '~/components/sections/Testimonials.astro';
 import About from '~/components/sections/About.astro';
 import Budget from '~/components/sections/Budget.astro';
+import PaintStrip from '~/components/PaintStrip.astro';
 ---
 
 <BaseLayout>
@@ -19,6 +20,11 @@ import Budget from '~/components/sections/Budget.astro';
   </svg>
 
   <Services />
+
+  <!-- La franja va donde el fondo ya cambia (claro -> oscuro): así no abre
+       ninguna costura entre dos secciones del mismo color. -->
+  <div class="wrap strip-slot"><PaintStrip gap={30} /></div>
+
   <Projects />
   <PaintTool />
   <Process />

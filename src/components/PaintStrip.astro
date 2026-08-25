@@ -1,0 +1,38 @@
+---
+/**
+ * Franja de pintura entre secciones: una pasada de brocha con toda la paleta.
+ * Se pinta de izquierda a derecha cuando entra en pantalla (`data-reveal` lo
+ * revela; la propia franja crece con su transición).
+ *
+ * Es decorativa: `aria-hidden` y sin texto.
+ */
+interface Props {
+  /** Espacio por encima y por debajo, en px. */
+  gap?: number;
+}
+const { gap = 0 } = Astro.props;
+---
+
+<div class="paint-strip" data-reveal aria-hidden="true" style={`--strip-gap: ${gap}px;`}>
+  <span class="paint-strip-fill"></span>
+</div>
+
+<style>
+  .paint-strip {
+    margin: var(--strip-gap) 0;
+    height: 8px;
+    overflow: hidden;
+  }
+  .paint-strip-fill {
+    display: block;
+    height: 100%;
+    /* Cantos irregulares: una brocha no deja una barra perfecta. */
+    border-radius: 7px 9px 8px 6px / 6px 8px 7px 9px;
+    background: var(--rainbow-line);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 1s var(--ease-out-soft);
+  }
+  :global(.reveal-ready) .paint-strip.is-in .paint-strip-fill,
+  :global(html:not(.reveal-ready)) .paint-strip .paint-strip-fill { transform: scaleX(1); }
+</style>

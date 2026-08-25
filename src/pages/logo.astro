@@ -1,0 +1,136 @@
+---
+/**
+ * Página interna para comparar las variantes del logotipo. No se enlaza desde
+ * ningún sitio y va con `noindex`: existe sólo para que la empresa elija.
+ *
+ * Cuando esté decidido: cambiar DEFAULT_LOGO en ~/lib/logo.ts y borrar este
+ * archivo junto con la variante descartada de src/assets.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Logo from '~/components/Logo.astro';
+import { LOGOS, type LogoVariant } from '~/lib/logo';
+
+const VARIANTS: { id: LogoVariant; title: string; desc: string }[] = [
+  {
+    id: 'clasico',
+    title: 'A · Original',
+    desc: 'El logotipo actual, tal cual está hoy en la web.',
+  },
+  {
+    id: 'realista-a',
+    title: 'B · Repintado realista',
+    desc: 'Pintura acrílica real, brillo húmedo y relieve. El más fotográfico; la silueta varía un poco.',
+  },
+  {
+    id: 'realista-b',
+    title: 'C · Repintado fiel',
+    desc: 'También pintura real, pero respetando mejor la silueta y las salpicaduras del original.',
+  },
+];
+---
+
+<BaseLayout title="Variantes del logotipo — PINTURESGS" noindex>
+  <section class="logopage">
+    <div class="wrap">
+      <span class="eyebrow">Uso interno</span>
+      <h1>¿Con cuál nos quedamos?</h1>
+      <p class="intro">
+        Las tres versiones al mismo tamaño y sobre el mismo fondo. Cada una se muestra
+        primero tal cual y después con el realce que lleva el hero: más pigmento, relieve
+        y un brillo de pintura húmeda que la cruza cada pocos segundos.
+      </p>
+
+      {VARIANTS.map((v) => (
+        <div class="variant">
+          <div class="variant-head">
+            <h2>{v.title}</h2>
+            <p>{v.desc}</p>
+          </div>
+          <div class="variant-row">
+            <figure>
+              <Logo width={420} variant={v.id} alt={`Logotipo ${v.title}, sin realce`} />
+              <figcaption>Tal cual</figcaption>
+            </figure>
+            <figure class="boosted" style={`--logo-mask: url(${LOGOS[v.id].src});`}>
+              <Logo width={420} variant={v.id} alt={`Logotipo ${v.title}, con realce`} />
+              <span class="gloss" aria-hidden="true"><span class="gloss-band"></span></span>
+              <figcaption>Con realce y brillo</figcaption>
+            </figure>
+          </div>
+        </div>
+      ))}
+
+      <p class="howto">
+        Para dejar una fija en toda la web: <code>DEFAULT_LOGO</code> en
+        <code>src/lib/logo.ts</code>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .logopage { --accent: var(--c-purple); padding: 150px 0 var(--section-y); }
+  h1 { font-size: clamp(2rem, 4.4vw, 3rem); margin: 14px 0 16px; }
+  .intro { color: var(--stone); max-width: 620px; line-height: 1.6; margin-bottom: 60px; }
+
+  .variant { padding: 40px 0; border-top: 1px solid var(--stone-light); }
+  .variant-head h2 { font-size: 1.4rem; margin-bottom: 6px; }
+  .variant-head p { color: var(--stone); font-size: 0.9rem; max-width: 560px; }
+
+  .variant-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 30px;
+  }
+  @media (max-width: 760px) { .variant-row { grid-template-columns: 1fr; } }
+
+  figure { position: relative; }
+  figure :global(img) { width: 100%; height: auto; }
+  figcaption { margin-top: 12px; font-size: 0.76rem; color: var(--stone); letter-spacing: 0.04em; }
+
+  .boosted :global(img) { filter: saturate(1.4) contrast(1.1); }
+  .boosted {
+    filter:
+      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
+      drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
+  }
+
+  /* Mismo brillo que en el hero, recortado con la silueta del logotipo. */
+  .gloss {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    aspect-ratio: 1100 / 1045;
+    overflow: hidden;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    -webkit-mask-image: var(--logo-mask);
+    mask-image: var(--logo-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+  .gloss-band {
+    position: absolute;
+    top: -30%; bottom: -30%;
+    left: -60%;
+    width: 60%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.10) 35%,
+      rgba(255, 255, 255, 0.55) 50%,
+      rgba(255, 255, 255, 0.10) 65%,
+      transparent 100%
+    );
+    animation: pageGloss 5s ease-in-out 1s infinite;
+  }
+  @keyframes pageGloss {
+    0%        { transform: translate3d(0, 0, 0); }
+    45%, 100% { transform: translate3d(310%, 0, 0); }
+  }
+
+  .howto { margin-top: 40px; font-size: 0.84rem; color: var(--stone); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; }
+</style>
