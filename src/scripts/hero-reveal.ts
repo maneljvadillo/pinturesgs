@@ -39,10 +39,22 @@ export function initHeroReveal(): void {
   let h = 0;
   let running = false;
   let rafId = 0;
+  /* Posición del hero en pantalla. Se cachea porque `getBoundingClientRect()`
+     obliga al navegador a recalcular el layout, y llamarlo en cada
+     `pointermove` (hasta 120 veces por segundo) es justo lo que hace que el
+     trazo salga a tirones. Se invalida al hacer scroll o al redimensionar. */
+  let rect = { left: 0, top: 0, width: 0, height: 0 };
+  let rectDirty = true;
+
+  function measure(): void {
+    const r = hero!.getBoundingClientRect();
+    rect = { left: r.left, top: r.top, width: r.width, height: r.height };
+    rectDirty = false;
+  }
 
   function resize(): void {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = hero!.getBoundingClientRect();
+    measure();
     w = rect.width;
     h = rect.height;
     canvas!.width = Math.round(w * dpr);
@@ -101,7 +113,7 @@ export function initHeroReveal(): void {
   }
 
   function addPoint(clientX: number, clientY: number): void {
-    const rect = hero!.getBoundingClientRect();
+    if (rectDirty) measure();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
@@ -130,6 +142,9 @@ export function initHeroReveal(): void {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(resize, 120);
   });
+  // Al hacer scroll el hero cambia de sitio: basta con marcar la medida como
+  // caducada y volver a tomarla en el siguiente punto del trazo.
+  window.addEventListener('scroll', () => { rectDirty = true; }, { passive: true });
 
   // Si el hero deja de verse, se corta el bucle aunque quedara trazo vivo.
   new IntersectionObserver(
