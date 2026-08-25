@@ -1,0 +1,58 @@
+---
+/**
+ * PROCESO — 5 pasos. Los puntos se iluminan al entrar en pantalla.
+ */
+import { PROCESS_STEPS } from '~/data/process';
+---
+
+<section class="process" id="proceso">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Proceso</span>
+      <h2>Así damos color a tu proyecto.</h2>
+    </div>
+
+    <ol class="process-steps">
+      {PROCESS_STEPS.map((s, i) => (
+        <li class="process-step">
+          <span class="ps-dot" aria-hidden="true"></span>
+          <div>
+            <span class="ps-num">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="ps-title">{s.title}</h3>
+            <p class="ps-desc">{s.desc}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .process { padding: var(--section-y) 0; background: var(--gesso); }
+  .process-steps { position: relative; margin-top: 64px; list-style: none; }
+
+  .process-step {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 24px;
+    padding-bottom: 58px;
+    position: relative;
+  }
+  .process-step:last-child { padding-bottom: 0; }
+  @media (max-width: 700px) { .process-step { grid-template-columns: 40px 1fr; gap: 16px; } }
+
+  .ps-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--stone-light);
+    margin-left: 23px;
+    margin-top: 6px;
+    transition: background .4s ease, transform .4s var(--ease-overshoot);
+  }
+  @media (max-width: 700px) { .ps-dot { margin-left: 13px; } }
+  .process-step.lit .ps-dot { background: var(--terracotta); transform: scale(1.15); }
+
+  .ps-num { display: block; font-family: var(--serif); font-size: 0.82rem; color: var(--stone); margin-bottom: 6px; }
+  .ps-title { font-family: var(--serif); font-size: 1.45rem; margin-bottom: 8px; }
+  .ps-desc { color: var(--stone); font-size: 0.9rem; max-width: 440px; line-height: 1.5; }
+</style>

@@ -1,0 +1,63 @@
+/**
+ * Tokens de diseño de PINTURESGS.
+ *
+ * El concepto de marca es "una capa blanca que esconde un mundo de color
+ * debajo": por fuera, gesso y tinta; por dentro, los ocho colores saturados
+ * sacados del splash del logotipo.
+ */
+:root {
+  /* ── Neutros: la "capa blanca" ─────────────────────────────────────── */
+  --gesso: #FAFAF8;
+  --ink: #161513;
+  /* Gris de texto secundario. #8A8680 (el del prototipo) se quedaba en 3.1:1
+     sobre el beige, por debajo del 4.5:1 que pide WCAG AA para texto pequeño;
+     casi todo el texto secundario del sitio usa este token. */
+  --stone: #6E6B66;
+  --stone-light: #D8D5CE;
+  /* Borde de CONTROLES (botones, chips). WCAG 1.4.11 pide 3:1 contra el fondo
+     adyacente para poder distinguir un control; --stone-light se queda en
+     1.5:1 y sólo vale para separadores decorativos. */
+  --control-border: #8B8883;
+
+  /* ── Acentos sobrios ───────────────────────────────────────────────── */
+  --terracotta: #C1502E;
+  --olive: #5C6B47;
+  --indigo: #2C4A6E;
+
+  /* ── El mundo de color de debajo. Tomados del logotipo real. ───────── */
+  --c-red: #FF1E3C;
+  --c-orange: #FF7A00;
+  --c-yellow: #FFD400;
+  --c-green: #00D26A;
+  --c-turq: #00C2D1;
+  --c-blue: #2979FF;
+  --c-purple: #C400FF;
+  --c-pink: #FF2FB0;
+
+  --rainbow: conic-gradient(
+    from 0deg,
+    var(--c-red), var(--c-orange), var(--c-yellow), var(--c-green),
+    var(--c-turq), var(--c-blue), var(--c-purple), var(--c-pink), var(--c-red)
+  );
+
+  /* ── Tipografía ────────────────────────────────────────────────────── */
+  --serif: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* ── Ritmo ─────────────────────────────────────────────────────────── */
+  --wrap-max: 1280px;
+  --wrap-pad: 40px;
+  --section-y: 120px;
+
+  /* ── Curvas de animación ───────────────────────────────────────────── */
+  --ease-out-soft: cubic-bezier(.2, .8, .2, 1);
+  --ease-in-out-firm: cubic-bezier(.65, 0, .35, 1);
+  --ease-overshoot: cubic-bezier(.16, .84, .44, 1);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --wrap-pad: 22px;
+    --section-y: 84px;
+  }
+}

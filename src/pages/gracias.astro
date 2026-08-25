@@ -1,0 +1,37 @@
+---
+/**
+ * Destino del formulario cuando se envía SIN JavaScript.
+ * Con JS el envío es por fetch y el usuario no sale de la home.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Solicitud recibida — PINTURESGS"
+  description="Hemos recibido tu solicitud de presupuesto."
+  noindex
+>
+  <section class="thanks">
+    <div class="wrap">
+      <span class="eyebrow">Presupuesto</span>
+      <h1>¡Recibido!</h1>
+      <p>
+        Gracias por contar con nosotros. Hemos recibido tu solicitud y te responderemos
+        lo antes posible.
+      </p>
+      <a href="/" class="btn-paint">Volver al inicio</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .thanks {
+    min-height: 72vh;
+    display: flex;
+    align-items: center;
+    padding: 160px 0 var(--section-y);
+    background: var(--gesso);
+  }
+  .thanks h1 { font-size: clamp(2.4rem, 6vw, 4rem); margin: 14px 0 18px; }
+  .thanks p { color: var(--stone); font-size: 1.05rem; line-height: 1.6; max-width: 460px; margin-bottom: 34px; }
+</style>

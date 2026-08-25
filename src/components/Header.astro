@@ -1,0 +1,126 @@
+---
+/**
+ * Menú fijo. Empieza transparente sobre el hero y se vuelve sólido al bajar.
+ * El logotipo se encoge en ese mismo momento.
+ */
+import Logo from '~/components/Logo.astro';
+
+const links = [
+  { href: '#servicios', label: 'Servicios' },
+  { href: '#proyectos', label: 'Proyectos' },
+  { href: '#pinta', label: 'Pinta tu espacio' },
+  { href: '#proceso', label: 'Proceso' },
+  { href: '#testimonios', label: 'Testimonios' },
+  { href: '#nosotros', label: 'Nosotros' },
+];
+---
+
+<header id="siteHeader">
+  <div class="wrap">
+    <nav aria-label="Navegación principal">
+      <a href="#top" class="logo">
+        <Logo width={116} eager />
+        <span class="sr-only">PINTURESGS — ir al inicio</span>
+      </a>
+
+      <div class="nav-links" id="navLinks">
+        {links.map((l) => <a href={l.href} data-nav>{l.label}</a>)}
+        <a href="#presupuesto" class="nav-cta" data-nav>Pedir presupuesto</a>
+      </div>
+
+      <button
+        class="nav-toggle"
+        id="navToggle"
+        aria-label="Abrir menú"
+        aria-expanded="false"
+        aria-controls="navLinks"
+      >
+        <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden="true">
+          <rect width="22" height="1.6" fill="currentColor" />
+          <rect y="7" width="22" height="1.6" fill="currentColor" />
+          <rect y="14" width="22" height="1.6" fill="currentColor" />
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<style>
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 24px 0;
+    transition: background .4s ease, padding .4s ease, border-color .4s ease;
+    border-bottom: 1px solid transparent;
+  }
+  header.solid {
+    background: rgba(250, 250, 248, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--stone-light);
+  }
+
+  nav { display: flex; align-items: center; justify-content: space-between; }
+
+  .logo { display: flex; align-items: center; }
+  .logo :global(img) {
+    height: 58px;
+    width: auto;
+    transition: height .4s ease;
+  }
+  header.solid .logo :global(img) { height: 46px; }
+
+  .nav-links { display: flex; gap: 36px; align-items: center; }
+  .nav-links a { font-size: 0.86rem; position: relative; }
+  .nav-links a:not(.nav-cta)::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: -4px;
+    width: 0; height: 1px;
+    background: var(--terracotta);
+    transition: width .3s ease;
+  }
+  .nav-links a:not(.nav-cta):hover::after,
+  .nav-links a:not(.nav-cta):focus-visible::after { width: 100%; }
+
+  .nav-cta {
+    border: 1px solid var(--ink);
+    padding: 9px 18px;
+    border-radius: 2px;
+    font-size: 0.8rem;
+    transition: background .3s ease, color .3s ease, border-color .3s ease;
+  }
+  .nav-cta:hover, .nav-cta:focus-visible {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+    color: #fff;
+  }
+
+  .nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .nav-links {
+      position: fixed;
+      inset: 0;
+      background: var(--gesso);
+      flex-direction: column;
+      justify-content: center;
+      gap: 32px;
+      transform: translateY(-100%);
+      transition: transform .4s ease;
+      /* Sin esto los enlaces siguen siendo tabulables con el menú cerrado. */
+      visibility: hidden;
+    }
+    .nav-links.open { transform: translateY(0); visibility: visible; }
+    .nav-links a { font-size: 1.35rem; }
+    .nav-toggle { display: block; z-index: 101; }
+  }
+</style>

@@ -1,0 +1,52 @@
+---
+/**
+ * Cursor de brocha. Sustituye a la flecha del sistema, pero SÓLO dentro de las
+ * zonas marcadas con `.brush-zone` (el hero y la herramienta de pintar).
+ *
+ * Se activa únicamente en dispositivos con puntero fino: en táctil no hay
+ * cursor que sustituir, y forzarlo dejaría un icono flotando sin sentido.
+ */
+---
+<div class="brush-cursor" id="brushCursor" aria-hidden="true">
+  <svg width="46" height="46" viewBox="0 0 46 46">
+    <defs>
+      <linearGradient id="brushGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#FF1E3C" />
+        <stop offset="18%" stop-color="#FF7A00" />
+        <stop offset="36%" stop-color="#FFD400" />
+        <stop offset="54%" stop-color="#00D26A" />
+        <stop offset="70%" stop-color="#00C2D1" />
+        <stop offset="86%" stop-color="#2979FF" />
+        <stop offset="100%" stop-color="#C400FF" />
+      </linearGradient>
+    </defs>
+    <rect x="4" y="4" width="8" height="20" rx="1.5" fill="#8B5E34" />
+    <rect x="3" y="22" width="10" height="6" fill="#B0B0AC" />
+    <path d="M3 28 C3 28 2 40 5 44 C6.5 45.7 9.5 45.7 11 44 C14 40 13 28 13 28 Z" fill="url(#brushGrad)" />
+  </svg>
+</div>
+
+<style>
+  .brush-cursor {
+    position: fixed;
+    top: 0; left: 0;
+    width: 46px; height: 46px;
+    pointer-events: none;
+    z-index: 200;
+    transform: translate(-1000px, -1000px);
+    opacity: 0;
+    transition: opacity .25s ease;
+    will-change: transform;
+    filter: saturate(1.6) contrast(1.08) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+  }
+  .brush-cursor.show { opacity: 1; }
+
+  /* Oculta el cursor del sistema dentro de las zonas de brocha. */
+  :global(.brush-zone) { cursor: none; }
+
+  /* Con puntero grueso (táctil) no se dibuja nunca. */
+  @media (hover: none), (pointer: coarse) {
+    .brush-cursor { display: none; }
+    :global(.brush-zone) { cursor: auto; }
+  }
+</style>

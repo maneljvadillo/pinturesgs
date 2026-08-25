@@ -1,0 +1,38 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Hero from '~/components/sections/Hero.astro';
+import Services from '~/components/sections/Services.astro';
+import Projects from '~/components/sections/Projects.astro';
+import PaintTool from '~/components/sections/PaintTool.astro';
+import Process from '~/components/sections/Process.astro';
+import Testimonials from '~/components/sections/Testimonials.astro';
+import About from '~/components/sections/About.astro';
+import Budget from '~/components/sections/Budget.astro';
+---
+
+<BaseLayout>
+  <Hero />
+
+  <!-- Pincelada que corta el hero y entra en el fondo claro. -->
+  <svg class="brush-divider" viewBox="0 0 1200 34" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,10 C150,30 350,0 600,14 C850,28 1050,2 1200,16 L1200,34 L0,34 Z"></path>
+  </svg>
+
+  <Services />
+  <Projects />
+  <PaintTool />
+  <Process />
+  <Testimonials />
+  <About />
+  <Budget />
+</BaseLayout>
+
+<script>
+  import { initNav } from '~/scripts/nav';
+  import { initBrushCursor } from '~/scripts/brush-cursor';
+  import { initRevealOnScroll } from '~/scripts/reveal-on-scroll';
+
+  initNav();
+  initBrushCursor();
+  initRevealOnScroll();
+</script>

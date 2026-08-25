@@ -1,0 +1,53 @@
+---
+/**
+ * Botón flotante de WhatsApp.
+ *
+ * Mientras no haya número real, lleva al formulario de presupuesto en lugar de
+ * a un wa.me roto. En cuanto se rellene `CONTACT.whatsapp` en src/data/site.ts
+ * el enlace pasa a abrir WhatsApp automáticamente.
+ */
+import { CONTACT, SITE } from '~/data/site';
+
+const hasNumber = !CONTACT.whatsapp.pending && CONTACT.whatsapp.value !== '';
+const href = hasNumber
+  ? `https://wa.me/${CONTACT.whatsapp.value}?text=${encodeURIComponent(`Hola, me gustaría pedir un presupuesto a ${SITE.name}.`)}`
+  : '#presupuesto';
+const label = hasNumber ? 'Escribir por WhatsApp' : 'Pedir presupuesto';
+---
+
+<a
+  href={href}
+  class="whatsapp-float"
+  aria-label={label}
+  title={label}
+  {...hasNumber ? { target: '_blank', rel: 'noopener noreferrer' } : {}}
+>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.7 3 1.1 4.8 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2z"
+      stroke="white" stroke-width="1.4"
+    />
+    <path
+      d="M8.5 8.8c.2-.5.5-.5.8-.5h.6c.2 0 .5 0 .7.5.3.6.9 2 1 2.1.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.2.7.2.4 1 1.6 2.2 2.3.6.4 1 .3 1.3 0 .3-.3.6-.7.9-.7.2 0 .5.1.9.4.4.3 1.4.8 1.5 1 .2.2.2.5.1.9-.1.4-.9 1.2-1.6 1.4-.6.2-1.3.3-3.5-.7-2.7-1.2-4.4-4-4.6-4.2-.1-.2-1.2-1.6-1.2-3 0-1.4.7-2 1-2.3z"
+      fill="white"
+    />
+  </svg>
+</a>
+
+<style>
+  .whatsapp-float {
+    position: fixed;
+    bottom: 26px; right: 26px;
+    z-index: 90;
+    background: var(--olive);
+    color: #fff;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    transition: transform .25s ease;
+  }
+  .whatsapp-float:hover, .whatsapp-float:focus-visible { transform: scale(1.08); }
+</style>

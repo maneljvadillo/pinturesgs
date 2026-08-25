@@ -1,0 +1,113 @@
+---
+/**
+ * PROYECTOS — rejilla oscura. Al pasar por encima, una pincelada diagonal
+ * descubre el nombre del proyecto y los servicios aplicados.
+ */
+import { Image } from 'astro:assets';
+import { PROJECTS } from '~/data/projects';
+import { photoSrc, photoAlt } from '~/lib/photos';
+
+const anySample = PROJECTS.some((p) => p.sample);
+---
+
+<section class="projects on-dark" id="proyectos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Proyectos</span>
+      <h2>Nuestro trabajo habla por nosotros.</h2>
+    </div>
+
+    <ul class="project-grid">
+      {PROJECTS.map((p) => {
+        const img = photoSrc(p.photo);
+        return (
+          <li class="project-card grain">
+            {img ? (
+              <Image
+                class="pc-bg"
+                src={img}
+                alt={photoAlt(p.photo)}
+                widths={[400, 700, 900]}
+                sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 33vw"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div class="pc-bg" style={`background:${p.fallback};`} aria-hidden="true"></div>
+            )}
+            <div class="pc-overlay">
+              <h3 class="pc-title">{p.title}</h3>
+              <p class="pc-tags">{p.tags.join(' · ')}</p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+
+    {anySample && (
+      <p class="photo-note">
+        Ejemplos de tipología de proyecto con fotografías de banco — pendientes de
+        sustituir por obras reales de PINTURESGS.
+      </p>
+    )}
+  </div>
+</section>
+
+<style>
+  .projects { padding: 110px 0; background: var(--ink); color: var(--gesso); }
+  .projects .section-head :global(.eyebrow) { color: #8f8b83; }
+  .projects :global(h2) { color: var(--gesso); }
+  .projects .photo-note { color: #8f8b83; }
+
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    list-style: none;
+  }
+  @media (max-width: 900px) { .project-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .project-grid { grid-template-columns: 1fr; } }
+
+  .project-card {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: #2a2925;
+  }
+
+  .pc-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.95;
+    transition: transform .6s var(--ease-out-soft);
+  }
+  .project-card:hover .pc-bg { transform: scale(1.06); }
+
+  /* La pincelada: el overlay entra con un corte diagonal, no en horizontal. */
+  .pc-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 26px;
+    background: linear-gradient(0deg, rgba(0,0,0,0.72) 0%, transparent 55%);
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0% 100%);
+    transition: clip-path .5s var(--ease-in-out-firm);
+  }
+  .project-card:hover .pc-overlay,
+  .project-card:focus-within .pc-overlay {
+    clip-path: polygon(0 100%, 100% 100%, 100% 0%, 0% 20%);
+  }
+
+  .pc-title { font-family: var(--serif); font-size: 1.2rem; margin-bottom: 6px; color: var(--gesso); }
+  .pc-tags { font-size: 0.74rem; color: #d8d3c9; }
+
+  /* En táctil no hay hover: la información se muestra siempre. */
+  @media (hover: none) {
+    .pc-overlay { clip-path: polygon(0 100%, 100% 100%, 100% 0%, 0% 20%); }
+  }
+</style>

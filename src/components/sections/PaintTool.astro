@@ -1,0 +1,430 @@
+---
+/**
+ * "PINTA EL TEU ESPAI" — dos tarjetas: Antes/Después y Paleta.
+ *
+ * La pared del fondo llega ya marcada, con una máscara real generada en build
+ * (scripts/build-wall-mask.mjs), así que el usuario sólo tiene que hacer clic y
+ * elegir color. Si quiere pintar otra zona, la señala él arrastrando un
+ * rectángulo: NO hay detección automática, eso exigiría una API externa de
+ * segmentación de imagen (ver docs/MEJORAS-FUTURAS.md).
+ *
+ * La paleta se renderiza en el servidor: son 78 muestras y montarlas con
+ * JavaScript retrasaría la interacción sin ninguna ventaja.
+ */
+import { getImage } from 'astro:assets';
+import salon from '~/assets/photos/salon.jpg';
+import { PALETTE } from '~/data/palette';
+import { PHOTO_BY_KEY } from '~/data/photos';
+
+const photoMeta = PHOTO_BY_KEY['salon']!;
+
+// La misma URL para el <img> del "antes" y para el lienzo: un solo descargue.
+const salonImg = await getImage({ src: salon, width: salon.width, format: 'webp', quality: 88 });
+
+const TOOLS = [
+  { id: 'rellenar', emoji: '🪣', label: 'Rellenar', hint: 'Pinta la zona entera de una vez' },
+  { id: 'brocha',   emoji: '🖌️', label: 'Brocha',   hint: 'Traza fino, para retocar' },
+  { id: 'rodillo',  emoji: '🧻', label: 'Rodillo',  hint: 'Traza ancho' },
+  { id: 'borrar',   emoji: '🩹', label: 'Borrar',   hint: 'Quita pintura y deja el color original' },
+];
+---
+
+<section
+  class="paint-tool"
+  id="pinta"
+  data-photo={salonImg.src}
+  data-mask="/room/salon-mask.png"
+  data-w={salon.width}
+  data-h={salon.height}
+>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Herramienta interactiva</span>
+      <h2>Pinta el teu espai</h2>
+      <p>Experimenta con los colores antes de decidirte. Esta es una pared real — pruébala.</p>
+    </div>
+
+    <div class="toolbar" role="toolbar" aria-label="Herramientas de pintura">
+      <div class="tool-group" role="radiogroup" aria-label="Herramienta activa">
+        {TOOLS.map((t, i) => (
+          <button
+            type="button"
+            class:list={['tool-btn', { active: i === 0 }]}
+            data-tool={t.id}
+            role="radio"
+            aria-checked={i === 0 ? 'true' : 'false'}
+            title={t.hint}
+          >
+            <span aria-hidden="true">{t.emoji}</span> {t.label}
+          </button>
+        ))}
+      </div>
+
+      <span class="tool-spacer"></span>
+
+      <div class="tool-group">
+        <button type="button" class="tool-btn" id="undoBtn" disabled>↶ Deshacer</button>
+        <button type="button" class="tool-btn" id="redoBtn" disabled>↷ Rehacer</button>
+        <button type="button" class="tool-btn" id="resetBtn">⟲ Restablecer</button>
+      </div>
+    </div>
+
+    <div class="pt-row">
+      <!-- ── Tarjeta 1: antes / después ──────────────────────────────── -->
+      <div class="pt-card">
+        <h3>Antes / Después</h3>
+        <p class="pt-card-sub">
+          La pared del fondo ya está detectada — haz clic sobre ella y elige un color en la
+          paleta. ¿Quieres pintar otra zona? Márcala con “➕ Marcar otra pared”.
+          Arrastra el control para comparar.
+        </p>
+
+        <div class="stage-frame brush-zone" id="stage">
+          <img
+            class="room-before"
+            src={salonImg.src}
+            width={salon.width}
+            height={salon.height}
+            alt={photoMeta.alt}
+            loading="lazy"
+            decoding="async"
+          />
+          <div class="room-after" id="roomAfter">
+            <canvas id="paintCanvas" width={salon.width} height={salon.height} role="img"
+              aria-label="Vista del salón con los colores que vas aplicando"></canvas>
+          </div>
+
+          <!--
+            Capa de interacción, fuera del recorte del comparador: así se puede
+            seguir pintando esté donde esté el deslizador.
+          -->
+          <div class="region-layer" id="regionLayer"></div>
+
+          <div class="compare-handle" id="compareHandle" aria-hidden="true"></div>
+
+          <button type="button" class="mark-btn" id="markBtn" aria-pressed="false">
+            ➕ Marcar otra pared
+          </button>
+          <p class="photo-hint" id="photoHint" hidden>
+            Arrastra un rectángulo sobre la zona que quieras pintar
+          </p>
+          <p class="stage-loading" id="stageLoading">Preparando la pared…</p>
+        </div>
+
+        <label class="compare-control">
+          <span class="sr-only">Comparar antes y después</span>
+          <input type="range" min="0" max="100" value="50" class="compare-range" id="compareRange" />
+        </label>
+        <p class="room-caption">{photoMeta.alt}.</p>
+        <p class="placeholder-note">
+          Fotografía de banco (Pexels, libre de derechos) — no es un proyecto real de PINTURESGS.
+        </p>
+      </div>
+
+      <!-- ── Tarjeta 2: paleta ───────────────────────────────────────── -->
+      <div class="pt-card">
+        <h3>Paleta</h3>
+        <p class="pt-card-sub">Zona seleccionada:</p>
+        <div class="wall-picker" id="wallPicker"></div>
+
+        <div class="palette-scroll">
+          {PALETTE.map((group) => (
+            <div class="palette-group">
+              <h4>{group.group}</h4>
+              <div class="swatch-grid">
+                {group.colors.map((c) => (
+                  <button
+                    type="button"
+                    class="swatch-cell"
+                    data-hex={c.hex}
+                    data-name={c.name}
+                    title={`${c.name} · ${c.hex}`}
+                    aria-label={`Aplicar ${c.name}`}
+                  >
+                    <span class="swatch-sq" style={`background:${c.hex}`}></span>
+                    <span class="swatch-name">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="custom-color-row">
+          <input type="color" id="customColor" value="#C1502E" aria-label="Color personalizado" />
+          <span>Color personalizado</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pt-final on-dark">
+      <h3>¿Te gusta cómo ha quedado?</h3>
+      <p>Tú eliges el color. Nosotros hacemos que ocurra.</p>
+      <div class="pt-final-btns">
+        <button type="button" class="btn-outline" id="saveDesignBtn">Guardar mi diseño</button>
+        <button type="button" class="btn-outline" id="compareBtn">Comparar antes y después</button>
+        <a href="#presupuesto" class="btn-paint light" id="wantResultBtn">Pedir presupuesto</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .paint-tool { padding: var(--section-y) 0; background: #EFEDE7; }
+
+  /* ── Barra de herramientas ────────────────────────────────────────── */
+  .toolbar { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .tool-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tool-spacer { flex: 1; min-width: 12px; }
+
+  .tool-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--control-border);
+    background: #fff;
+    border-radius: 4px;
+    font-size: 0.76rem;
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease;
+  }
+  .tool-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .tool-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .tool-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ── Tarjetas ─────────────────────────────────────────────────────── */
+  .pt-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 1100px) { .pt-row { grid-template-columns: 1fr; } }
+
+  .pt-card { background: #fff; border: 1px solid var(--stone-light); border-radius: 10px; padding: 18px; }
+  .pt-card h3 { font-family: var(--serif); font-size: 1.05rem; margin-bottom: 4px; }
+  .pt-card-sub { font-size: 0.76rem; color: var(--stone); margin-bottom: 14px; line-height: 1.5; }
+
+  /* ── Escenario ────────────────────────────────────────────────────── */
+  .stage-frame {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--stone-light);
+    background: #F6F4EF;
+    /* Se ajusta a la foto real para no recortarla ni deformarla. */
+    aspect-ratio: 985 / 900;
+    touch-action: pan-y;
+  }
+  .room-before, .room-after, .region-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .room-before { object-fit: cover; }
+  .room-after { clip-path: inset(0 50% 0 0); }
+  .room-after canvas { width: 100%; height: 100%; display: block; }
+
+  /* Capa de interacción: siempre por encima y sin recortar. */
+  .region-layer { z-index: 3; }
+
+  .compare-handle {
+    position: absolute;
+    top: 0; bottom: 0; left: 50%;
+    width: 2px;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    z-index: 4;
+  }
+  .compare-handle::after {
+    content: '◂▸';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    color: var(--ink);
+    font-size: 0.7rem;
+    padding: 6px 8px;
+    border-radius: 20px;
+    letter-spacing: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .compare-control { display: block; }
+  .compare-range { width: 100%; margin-top: 14px; accent-color: var(--terracotta); }
+
+  .room-caption { font-size: 0.74rem; color: var(--stone); margin-top: 10px; }
+  .pt-card .placeholder-note { margin-top: 4px; }
+
+  .mark-btn {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    z-index: 5;
+    font-size: 0.72rem;
+    padding: 8px 13px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid var(--control-border);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .mark-btn[aria-pressed='true'] { background: var(--terracotta); color: #fff; border-color: var(--terracotta); }
+
+  .photo-hint, .stage-loading {
+    position: absolute;
+    bottom: 10px; left: 10px;
+    z-index: 5;
+    font-size: 0.66rem;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 5px 10px;
+    border-radius: 20px;
+    color: var(--stone);
+    max-width: 60%;
+  }
+  .stage-loading { top: 10px; bottom: auto; }
+
+  /* ── Selector de zona ─────────────────────────────────────────────── */
+  .wall-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+  /* ── Paleta ───────────────────────────────────────────────────────── */
+  .palette-scroll { max-height: 300px; overflow-y: auto; padding-right: 4px; }
+  .palette-group { margin-bottom: 16px; }
+  .palette-group h4 {
+    font-family: var(--sans);
+    font-size: 0.68rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--stone);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .swatch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  @media (max-width: 420px) { .swatch-grid { grid-template-columns: repeat(4, 1fr); } }
+
+  .swatch-cell {
+    cursor: pointer;
+    text-align: center;
+    background: none;
+    border: none;
+    padding: 0;
+    display: block;
+  }
+  .swatch-sq {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .swatch-cell:hover .swatch-sq { transform: scale(1.08); }
+  .swatch-cell.active .swatch-sq { border-color: var(--ink); transform: scale(1.1); }
+  .swatch-name {
+    display: block;
+    font-size: 0.58rem;
+    color: var(--stone);
+    margin-top: 4px;
+    line-height: 1.15;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .custom-color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--stone-light);
+  }
+  .custom-color-row input[type='color'] {
+    width: 34px; height: 34px;
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    padding: 0;
+    background: none;
+  }
+  .custom-color-row span { font-size: 0.76rem; color: var(--stone); }
+
+  /* ── Cierre ───────────────────────────────────────────────────────── */
+  .pt-final {
+    margin-top: 26px;
+    padding: 30px;
+    background: var(--ink);
+    color: var(--gesso);
+    border-radius: 6px;
+    text-align: center;
+  }
+  .pt-final h3 { font-family: var(--serif); font-size: 1.5rem; margin-bottom: 8px; }
+  .pt-final p { font-size: 0.9rem; color: #c9c5bc; margin-bottom: 22px; }
+  .pt-final-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+</style>
+
+<!--
+  Estilos de los elementos que crea el script (chips de zona, etiquetas y
+  rectángulo de marcado). Van en un bloque global porque Astro sólo aplica el
+  ámbito a lo que existe en el HTML renderizado.
+-->
+<style is:global>
+  .paint-tool .wall-chip {
+    padding: 6px 13px;
+    border: 1px solid var(--control-border);
+    border-radius: 20px;
+    font-size: 0.76rem;
+    cursor: pointer;
+    background: transparent;
+    transition: border-color .25s ease, color .25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .paint-tool .wall-chip:hover { border-color: var(--ink); }
+  .paint-tool .wall-chip.active { border-color: var(--terracotta); color: var(--terracotta); font-weight: 500; }
+  .paint-tool .wall-chip .chip-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  }
+  .paint-tool .wall-chip .chip-dot.empty {
+    background: repeating-linear-gradient(45deg, #ddd 0 3px, #fff 3px 6px);
+  }
+
+  /* Etiqueta flotante de cada zona sobre la foto. */
+  .paint-tool .region-tag {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: rgba(22, 21, 19, 0.82);
+    color: #fff;
+    font-size: 0.62rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    pointer-events: none;
+    white-space: nowrap;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .paint-tool .region-tag.selected { background: var(--terracotta); }
+
+  /* Rectángulo que el usuario está arrastrando. */
+  .paint-tool .draw-preview {
+    position: absolute;
+    border: 2px dashed var(--terracotta);
+    background: rgba(193, 80, 46, 0.15);
+    pointer-events: none;
+  }
+  .paint-tool .region-layer.marking { cursor: crosshair; }
+  .paint-tool .region-layer.painting { cursor: none; }
+</style>
+
+<script>
+  import { initPaintTool } from '~/scripts/paint-tool/index';
+  initPaintTool();
+</script>

@@ -1,0 +1,65 @@
+---
+/**
+ * TESTIMONIOS — marcados explícitamente como ejemplo mientras no haya reseñas
+ * reales. No se publica como opinión de un cliente algo que nadie ha dicho.
+ */
+import { TESTIMONIALS } from '~/data/testimonials';
+---
+
+<section class="testimonials" id="testimonios">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Testimonios</span>
+      <h2>Lo que dicen quienes ya han confiado en nosotros.</h2>
+    </div>
+
+    <ul class="testi-grid">
+      {TESTIMONIALS.map((t) => (
+        <li class="testi-card">
+          <p class="testi-stars" aria-label={`${t.stars} de 5 estrellas`}>
+            <span aria-hidden="true">{'★'.repeat(t.stars)}</span>
+          </p>
+          <blockquote class="testi-text">{t.text}</blockquote>
+          <p class="testi-author">{t.author}</p>
+          {t.sample && (
+            <p class="placeholder-note">
+              opinión de ejemplo — pendiente de sustituir por reseñas reales
+            </p>
+          )}
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .testimonials { padding: 110px 0; background: #EFEDE7; }
+
+  .testi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+    margin-top: 50px;
+    list-style: none;
+  }
+  @media (max-width: 900px) { .testi-grid { grid-template-columns: 1fr; } }
+
+  .testi-card {
+    background: #fff;
+    border: 1px solid var(--stone-light);
+    border-radius: 6px;
+    padding: 30px;
+  }
+  .testi-stars { color: var(--terracotta); font-size: 1rem; margin-bottom: 14px; letter-spacing: 2px; }
+  .testi-text {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    color: #3a3833;
+  }
+  .testi-text::before { content: '“'; }
+  .testi-text::after { content: '”'; }
+  .testi-author { font-size: 0.82rem; color: var(--stone); font-weight: 500; }
+  .placeholder-note { margin-top: 4px; }
+</style>

@@ -1,0 +1,29 @@
+---
+/**
+ * Avisos efímeros. Es una región `aria-live` para que un lector de pantalla
+ * anuncie lo que pasa (color aplicado, acción deshecha…) sin robar el foco.
+ */
+---
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<style>
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translate(-50%, 20px);
+    background: var(--ink);
+    color: var(--gesso);
+    padding: 14px 22px;
+    border-radius: 30px;
+    font-size: 0.84rem;
+    z-index: 300;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .35s var(--ease-out-soft), transform .35s var(--ease-out-soft);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    max-width: min(90vw, 420px);
+    text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>

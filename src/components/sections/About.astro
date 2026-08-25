@@ -1,0 +1,72 @@
+---
+/**
+ * SOBRE PINTURESGS — mensaje de confianza y estadísticas.
+ * Las cifras son placeholders [X] mientras no haya datos reales; cada una lo
+ * dice debajo para que nadie los tome por buenos.
+ */
+import { STATS, AUDIENCES } from '~/data/site';
+---
+
+<section class="about" id="nosotros">
+  <div class="wrap about-grid">
+    <div>
+      <span class="eyebrow">Sobre PINTURESGS</span>
+      <h2>Desde una pared hasta un gran proyecto.</h2>
+      <p class="lead">
+        Trabajamos con el mismo nivel de cuidado en una habitación particular que en un
+        edificio completo. Profesionalidad, atención al detalle y capacidad para asumir
+        proyectos de cualquier tamaño.
+      </p>
+      <ul class="about-targets">
+        {AUDIENCES.map((a) => <li>{a}</li>)}
+      </ul>
+    </div>
+
+    <div>
+      <dl class="stats-grid">
+        {STATS.map((s) => (
+          <div class="stat-box">
+            <dd class="stat-num">{s.num.value}</dd>
+            <dt class="stat-label">{s.label}</dt>
+            {s.num.pending && <dd class="placeholder-note">dato pendiente</dd>}
+          </div>
+        ))}
+      </dl>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about { padding: var(--section-y) 0; background: #EFEDE7; }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 64px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .about-grid { grid-template-columns: 1fr; gap: 44px; } }
+
+  .about h2 { font-size: clamp(2rem, 4.2vw, 3rem); margin-bottom: 20px; margin-top: 14px; }
+  .lead { font-size: 1rem; color: #4a4843; line-height: 1.65; max-width: 500px; }
+
+  .about-targets { margin-top: 26px; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+  .about-targets li {
+    font-size: 0.8rem;
+    padding: 7px 14px;
+    border: 1px solid var(--stone-light);
+    border-radius: 20px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--stone-light);
+    border: 1px solid var(--stone-light);
+  }
+  .stat-box { background: #EFEDE7; padding: 28px 22px; }
+  .stat-num { font-family: var(--serif); font-size: 2.3rem; color: var(--terracotta); margin: 0; }
+  .stat-label { font-size: 0.76rem; color: var(--stone); margin-top: 6px; }
+  .stat-box .placeholder-note { margin: 4px 0 0; }
+</style>

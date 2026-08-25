@@ -1,0 +1,213 @@
+---
+/**
+ * FORMULARIO DE PRESUPUESTO.
+ *
+ * Envía a /api/presupuesto (función serverless). Funciona sin JavaScript:
+ * es un <form> normal con method="post". Con JS activado se intercepta para
+ * enviarlo por fetch, mostrar estados y no perder la posición en la página.
+ */
+import { PROJECT_TYPES } from '~/data/site';
+---
+
+<section class="budget on-dark" id="presupuesto">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Presupuesto</span>
+      <h2>¿Tienes un proyecto en mente?</h2>
+      <p>Cuéntanos qué necesitas y prepararemos un presupuesto personalizado.</p>
+    </div>
+
+    <form
+      class="form-grid"
+      id="budgetForm"
+      method="post"
+      action="/api/presupuesto"
+      enctype="multipart/form-data"
+      novalidate
+    >
+      <div class="field">
+        <label for="f-nombre">Nombre</label>
+        <input id="f-nombre" name="nombre" type="text" placeholder="Tu nombre" required autocomplete="name" />
+        <p class="field-error" data-error-for="nombre"></p>
+      </div>
+
+      <div class="field">
+        <label for="f-telefono">Teléfono</label>
+        <input id="f-telefono" name="telefono" type="tel" placeholder="+34 600 000 000" required autocomplete="tel" />
+        <p class="field-error" data-error-for="telefono"></p>
+      </div>
+
+      <div class="field">
+        <label for="f-email">Email</label>
+        <input id="f-email" name="email" type="email" placeholder="tucorreo@email.com" required autocomplete="email" />
+        <p class="field-error" data-error-for="email"></p>
+      </div>
+
+      <div class="field">
+        <label for="f-tipo">Tipo de proyecto</label>
+        <select id="f-tipo" name="tipo" required>
+          {PROJECT_TYPES.map((t) => <option value={t}>{t}</option>)}
+        </select>
+        <p class="field-error" data-error-for="tipo"></p>
+      </div>
+
+      <div class="field full">
+        <label for="f-ubicacion">Ubicación</label>
+        <input id="f-ubicacion" name="ubicacion" type="text" placeholder="Ciudad / dirección aproximada" autocomplete="address-level2" />
+        <p class="field-error" data-error-for="ubicacion"></p>
+      </div>
+
+      <div class="field full">
+        <label for="f-descripcion">Descripción</label>
+        <textarea id="f-descripcion" name="descripcion" rows="4" placeholder="Cuéntanos qué necesitas pintar..."></textarea>
+        <p class="field-error" data-error-for="descripcion"></p>
+      </div>
+
+      <div class="field full">
+        <label for="f-fotos">Adjuntar fotografías</label>
+        <input id="f-fotos" name="fotos" type="file" accept="image/*" multiple class="sr-only" />
+        <label class="file-field" for="f-fotos" id="fileDrop">
+          <span id="fileLabel">Haz clic o arrastra tus imágenes aquí</span>
+          <span class="file-hint">JPG, PNG o WEBP · hasta 5 imágenes · 4 MB en total</span>
+        </label>
+        <p class="field-error" data-error-for="fotos"></p>
+      </div>
+
+      <!--
+        Trampa antispam: es invisible y ningún humano la rellena. Si llega con
+        contenido, el servidor descarta el envío sin decir por qué.
+      -->
+      <div class="hp" aria-hidden="true">
+        <label for="f-web">No rellenar</label>
+        <input id="f-web" name="website" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+      <input type="hidden" name="renderedAt" id="renderedAt" />
+
+      <!-- Resumen del diseño hecho en "Pinta el teu espai", si lo hay. -->
+      <input type="hidden" name="diseno" id="disenoInput" />
+
+      <div class="full">
+        <div class="form-context-chip" id="formContextChip"></div>
+      </div>
+
+      <div class="submit-row full">
+        <button type="submit" class="btn-paint light" id="submitBtn">Solicitar presupuesto</button>
+        <span class="submit-note">Te responderemos lo antes posible.</span>
+      </div>
+
+      <p class="form-status full" id="formStatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<style>
+  .budget { padding: var(--section-y) 0; background: var(--ink); color: var(--gesso); }
+  .budget .section-head :global(.eyebrow) { color: #8f8b83; }
+  .budget :global(h2) { color: var(--gesso); max-width: 600px; }
+  .budget .section-head > :global(p) { color: #c9c5bc; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin-top: 46px;
+  }
+  @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+  .full { grid-column: 1 / -1; }
+
+  .field label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #a6a29a;
+    margin-bottom: 8px;
+  }
+  .field input:not([type='file']),
+  .field select,
+  .field textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #66635A;
+    color: var(--gesso);
+    padding: 10px 2px;
+    font-family: var(--sans);
+    font-size: 0.94rem;
+    outline: none;
+    transition: border-color .25s ease;
+  }
+  .field input::placeholder, .field textarea::placeholder { color: #827E73; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--terracotta); }
+  .field select option { color: #111; }
+  .field textarea { resize: vertical; }
+
+  /* Estado de error por campo. */
+  .field-error {
+    font-size: 0.74rem;
+    color: #ff8e7a;
+    margin-top: 6px;
+    min-height: 0;
+  }
+  .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: #ff8e7a; }
+
+  /*
+    Va con `.field .file-field` a propósito: este <label> también recibe las
+    reglas de `.field label`, que tiene la misma especificidad de clase pero
+    suma el selector de elemento y ganaba. Con eso la zona de arrastre salía en
+    una sola línea, en mayúsculas y con el interletrado de las etiquetas.
+  */
+  .field .file-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1.5px dashed #66635A;
+    border-radius: 4px;
+    padding: 18px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #a6a29a;
+    cursor: pointer;
+    transition: border-color .25s ease, background .25s ease;
+    letter-spacing: normal;
+    text-transform: none;
+    margin-bottom: 0;
+  }
+  .field .file-field:hover, .field .file-field.dragover { border-color: var(--terracotta); background: rgba(193, 80, 46, 0.08); }
+  .file-hint { font-size: 0.7rem; color: #6f6c64; }
+
+  /* Trampa antispam: fuera de pantalla, no `display:none` (algunos bots lo detectan). */
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px; height: 1px;
+    overflow: hidden;
+  }
+
+  .submit-row { margin-top: 12px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .submit-note { font-size: 0.8rem; color: #a6a29a; }
+  #submitBtn[disabled] { opacity: 0.55; cursor: progress; }
+
+  .form-context-chip {
+    display: none;
+    font-size: 0.76rem;
+    background: #2a2925;
+    padding: 12px 18px;
+    border-radius: 20px;
+    color: #d8d3c9;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: 620px;
+    line-height: 1.5;
+  }
+  .form-context-chip.show { display: inline-flex; }
+
+  .form-status { font-size: 0.9rem; line-height: 1.5; }
+  .form-status.ok { color: #7ee2a8; }
+  .form-status.error { color: #ff8e7a; }
+</style>
+
+<script>
+  import { initBudgetForm } from '~/scripts/budget-form';
+  initBudgetForm();
+</script>

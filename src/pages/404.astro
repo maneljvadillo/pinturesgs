@@ -1,0 +1,30 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Página no encontrada — PINTURESGS" noindex>
+  <section class="nf">
+    <div class="wrap">
+      <span class="eyebrow">Error 404</span>
+      <h1>Esta pared está en blanco.</h1>
+      <p>La página que buscas no existe o ha cambiado de sitio.</p>
+      <div class="nf-links">
+        <a href="/" class="btn-paint">Volver al inicio</a>
+        <a href="/#presupuesto" class="btn-ghost">Pedir presupuesto</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    min-height: 72vh;
+    display: flex;
+    align-items: center;
+    padding: 160px 0 var(--section-y);
+    background: var(--gesso);
+  }
+  .nf h1 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); margin: 14px 0 18px; }
+  .nf p { color: var(--stone); font-size: 1.05rem; margin-bottom: 34px; }
+  .nf-links { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+</style>

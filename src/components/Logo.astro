@@ -1,0 +1,33 @@
+---
+/**
+ * El logotipo real de PINTURESGS: el splash multicolor con "pintures GS".
+ * Fondo transparente, sin recuadro negro y sin texto de marca añadido.
+ *
+ * Se sirve como PNG optimizado en varios tamaños. En el menú y el pie va como
+ * imagen decorativa acompañada de texto accesible; en el hero es el elemento
+ * gráfico principal.
+ */
+import { Image } from 'astro:assets';
+import logo from '~/assets/logo.png';
+
+interface Props {
+  /** Ancho renderizado en CSS px al tamaño mayor previsto. */
+  width: number;
+  class?: string;
+  /** El hero lo carga de inmediato; el resto puede esperar. */
+  eager?: boolean;
+  alt?: string;
+}
+const { width, class: className, eager = false, alt = '' } = Astro.props;
+---
+
+<Image
+  src={logo}
+  alt={alt}
+  width={width}
+  densities={[1, 2]}
+  class={className}
+  loading={eager ? 'eager' : 'lazy'}
+  fetchpriority={eager ? 'high' : 'auto'}
+  decoding={eager ? 'sync' : 'async'}
+/>

@@ -1,0 +1,204 @@
+---
+/**
+ * SERVICIOS — 9 categorías con foto de fondo, emoji y sus subfaenas concretas
+ * como etiquetas. Las etiquetas que no caben se pliegan tras un "+N ver más".
+ *
+ * Se renderiza en el servidor: el texto de los servicios es contenido real y
+ * debe estar en el HTML, no montarse con JavaScript.
+ */
+import { Image } from 'astro:assets';
+import { SERVICES, VISIBLE_TAGS } from '~/data/services';
+import { photoSrc, photoAlt } from '~/lib/photos';
+import { HAS_STOCK_PHOTOS } from '~/data/photos';
+---
+
+<section class="services" id="servicios">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Servicios</span>
+      <h2>Todo tipo de pintura.<br />Todo tipo de proyectos.</h2>
+    </div>
+
+    <ul class="services-grid">
+      {SERVICES.map((s, si) => {
+        const img = photoSrc(s.photo);
+        const visible = s.tasks.slice(0, VISIBLE_TAGS);
+        const hidden = s.tasks.slice(VISIBLE_TAGS);
+        const tagsId = `st-tags-${si}`;
+        return (
+          <li class="service-tile grain">
+            {img ? (
+              <Image
+                class="st-bg"
+                src={img}
+                alt={photoAlt(s.photo)}
+                widths={[400, 700, 900]}
+                sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 33vw"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div class="st-bg st-bg--fallback" aria-hidden="true"></div>
+            )}
+
+            <span class="st-emoji" aria-hidden="true">{s.emoji}</span>
+
+            <div class="st-content">
+              <h3 class="st-name">{s.name}</h3>
+              <div class="st-tags-wrap">
+                <div class="st-tags" id={tagsId}>
+                  {visible.map((t) => <span class="tag-chip">{t}</span>)}
+                  {hidden.map((t) => <span class="tag-chip">{t}</span>)}
+                </div>
+                {hidden.length > 0 && (
+                  <button
+                    type="button"
+                    class="tag-more"
+                    data-target={tagsId}
+                    data-count={hidden.length}
+                    aria-expanded="false"
+                    aria-controls={tagsId}
+                  >
+                    +{hidden.length} ver más
+                  </button>
+                )}
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+
+    {HAS_STOCK_PHOTOS && (
+      <p class="photo-note">
+        Fotografías de referencia (banco de imágenes libre de derechos) — listas para
+        sustituir por fotos reales de vuestros proyectos.
+      </p>
+    )}
+  </div>
+</section>
+
+<style>
+  .services { padding: var(--section-y) 0 100px; background: var(--gesso); }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    list-style: none;
+  }
+  @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .services-grid { grid-template-columns: 1fr; } }
+
+  .service-tile {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    color: #fff;
+    overflow: hidden;
+    background: #2a2925;
+  }
+
+  .st-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .6s var(--ease-out-soft);
+  }
+  .service-tile:hover .st-bg { transform: scale(1.07); }
+
+  /* Si todavía no hay foto, un degradado de marca en vez de un hueco negro. */
+  .st-bg--fallback {
+    background:
+      radial-gradient(circle at 30% 20%, var(--c-turq), transparent 60%),
+      radial-gradient(circle at 75% 70%, var(--c-purple), transparent 62%),
+      var(--ink);
+    filter: saturate(1.3);
+  }
+
+  .st-emoji {
+    position: absolute;
+    top: 20px; left: 22px;
+    font-size: 1.7rem;
+    z-index: 2;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  }
+
+  .st-content {
+    position: absolute;
+    inset: 0;
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    z-index: 2;
+  }
+  .st-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 55%, transparent 75%);
+    z-index: -1;
+  }
+
+  .st-name {
+    font-family: var(--serif);
+    font-size: clamp(1.1rem, 2vw, 1.6rem);
+    margin-bottom: 8px;
+    color: #fff;
+  }
+
+  /*
+    El botón "+N ver más" va FUERA de la caja que se pliega. Dentro se quedaba
+    en la segunda fila de etiquetas, que está oculta, y no había forma de saber
+    que quedaban subfaenas por ver.
+  */
+  .st-tags-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+
+  .st-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 26px;
+    overflow: hidden;
+    transition: max-height .35s ease;
+  }
+  .st-tags.expanded { max-height: 200px; }
+
+  .tag-chip {
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 20px;
+    white-space: nowrap;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .tag-more {
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--ink);
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+    border: none;
+  }
+  .tag-more:hover { background: #fff; }
+</style>
+
+<script>
+  // Plegar/desplegar las subfaenas que no caben.
+  document.querySelectorAll<HTMLButtonElement>('.tag-more').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target!);
+      if (!target) return;
+      const expanded = target.classList.toggle('expanded');
+      btn.setAttribute('aria-expanded', String(expanded));
+      btn.textContent = expanded ? 'ver menos' : `+${btn.dataset.count} ver más`;
+    });
+  });
+</script>
