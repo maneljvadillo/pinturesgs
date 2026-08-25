@@ -5,27 +5,42 @@
  */
 import Logo from '~/components/Logo.astro';
 
+interface Props {
+  /**
+   * La página empieza con un bloque oscuro (p. ej. /presupuesto). El menú es
+   * transparente hasta que se baja, así que sin esto sus enlaces salen en
+   * tinta oscura sobre fondo oscuro y no se ven.
+   */
+  onDark?: boolean;
+}
+const { onDark = false } = Astro.props;
+
+/*
+  Las secciones viven en la portada, así que los enlaces llevan la barra
+  delante: desde /presupuesto una ancla suelta no lleva a ninguna parte. Desde
+  la propia home el navegador sigue tratándolo como un salto interno.
+*/
 const links = [
-  { href: '#servicios', label: 'Servicios' },
-  { href: '#proyectos', label: 'Proyectos' },
-  { href: '#pinta', label: 'Pinta tu espacio' },
-  { href: '#proceso', label: 'Proceso' },
-  { href: '#testimonios', label: 'Testimonios' },
-  { href: '#nosotros', label: 'Nosotros' },
+  { href: '/#servicios', label: 'Servicios' },
+  { href: '/#proyectos', label: 'Proyectos' },
+  { href: '/#pinta', label: 'Pinta tu espacio' },
+  { href: '/#proceso', label: 'Proceso' },
+  { href: '/#testimonios', label: 'Testimonios' },
+  { href: '/#nosotros', label: 'Nosotros' },
 ];
 ---
 
-<header id="siteHeader">
+<header id="siteHeader" class:list={[{ 'on-dark-top': onDark }]}>
   <div class="wrap">
     <nav aria-label="Navegación principal">
-      <a href="#top" class="logo">
+      <a href="/" class="logo">
         <Logo width={116} eager />
         <span class="sr-only">PINTURESGS — ir al inicio</span>
       </a>
 
       <div class="nav-links" id="navLinks">
         {links.map((l) => <a href={l.href} data-nav>{l.label}</a>)}
-        <a href="#presupuesto" class="nav-cta" data-nav>Pedir presupuesto</a>
+        <a href="/presupuesto" class="nav-cta" data-nav>Pedir presupuesto</a>
       </div>
 
       <button
@@ -145,6 +160,15 @@ const links = [
     padding: 6px;
   }
 
+  /*
+    Sobre fondo oscuro y sin haber bajado todavía, todo el menú va en claro.
+    En cuanto aparece el fondo sólido (`.solid`) se vuelve a la tinta normal, y
+    el desplegable de móvil mantiene su fondo claro y sus enlaces oscuros.
+  */
+  header.on-dark-top:not(.solid) .nav-links:not(.open) a { color: var(--gesso); }
+  header.on-dark-top:not(.solid) .nav-toggle { color: var(--gesso); }
+  header.on-dark-top:not(.solid) .nav-links:not(.open) .nav-cta { border-color: var(--gesso); }
+
   @media (max-width: 900px) {
     .nav-links {
       position: fixed;
@@ -163,3 +187,8 @@ const links = [
     .nav-toggle { display: block; z-index: 101; }
   }
 </style>
+
+<script>
+  import { initNav } from '~/scripts/nav';
+  initNav();
+</script>

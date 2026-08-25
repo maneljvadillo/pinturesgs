@@ -7,7 +7,6 @@ import PaintTool from '~/components/sections/PaintTool.astro';
 import Process from '~/components/sections/Process.astro';
 import Testimonials from '~/components/sections/Testimonials.astro';
 import About from '~/components/sections/About.astro';
-import Budget from '~/components/sections/Budget.astro';
 import PaintStrip from '~/components/PaintStrip.astro';
 ---
 
@@ -30,13 +29,10 @@ import PaintStrip from '~/components/PaintStrip.astro';
   <Process />
   <Testimonials />
   <About />
-  <Budget />
 </BaseLayout>
 
 <script>
-  import { initNav } from '~/scripts/nav';
   import { initRevealOnScroll } from '~/scripts/reveal-on-scroll';
 
-  initNav();
   initRevealOnScroll();
 </script>

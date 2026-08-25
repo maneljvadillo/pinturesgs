@@ -28,14 +28,14 @@ const emailIsReal = !CONTACT.email.pending;
         {emailIsReal
           ? <a href={`mailto:${CONTACT.email.value}`}>{CONTACT.email.value}</a>
           : <p class="pending">{CONTACT.email.value}</p>}
-        <a href="#presupuesto">Pedir presupuesto</a>
+        <a href="/presupuesto">Pedir presupuesto</a>
       </div>
 
       <div class="footer-col">
         <h2>Empresa</h2>
-        <a href="#servicios">Servicios</a>
-        <a href="#proyectos">Proyectos</a>
-        <a href="#nosotros">Nosotros</a>
+        <a href="/#servicios">Servicios</a>
+        <a href="/#proyectos">Proyectos</a>
+        <a href="/#nosotros">Nosotros</a>
         <p class:list={[{ pending: CONTACT.location.pending }]}>{CONTACT.location.value}</p>
       </div>
     </div>

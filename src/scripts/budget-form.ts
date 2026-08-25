@@ -8,7 +8,7 @@
 import { showToast } from '~/scripts/toast';
 import {
   MAX_FILES, MAX_TOTAL_BYTES, ACCEPTED_TYPES, LIMITS,
-  PHONE_RE, EMAIL_RE, formatBytes,
+  PHONE_RE, EMAIL_RE, formatBytes, DESIGN_KEY,
 } from '~/lib/budget';
 
 type Rule = (value: string) => string | null;
@@ -47,6 +47,27 @@ export function initBudgetForm(): void {
 
   // Marca cuándo se pintó el formulario: un envío instantáneo delata un bot.
   renderedAt.value = String(Date.now());
+
+  /*
+    Si el visitante viene de "Pinta el teu espai", su diseño llega por
+    `sessionStorage`. Se recoge una sola vez: si vuelve al formulario más tarde
+    sin pasar por la herramienta, no debe aparecer un diseño viejo.
+  */
+  try {
+    const design = sessionStorage.getItem(DESIGN_KEY);
+    if (design) {
+      const input = document.getElementById('disenoInput') as HTMLInputElement | null;
+      const chip = document.getElementById('formContextChip');
+      if (input) input.value = design;
+      if (chip) {
+        chip.textContent = `🎨 Tu diseño: ${design}`;
+        chip.classList.add('show');
+      }
+      sessionStorage.removeItem(DESIGN_KEY);
+    }
+  } catch {
+    /* Sin almacenamiento (modo privado): el formulario funciona igual. */
+  }
 
   // ── Validación por campo ──────────────────────────────────────────────
   const fieldOf = (name: string) =>

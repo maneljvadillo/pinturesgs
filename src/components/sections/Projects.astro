@@ -81,7 +81,8 @@ const ACCENTS = ['yellow', 'turq', 'pink', 'green', 'orange', 'blue'];
     list-style: none;
   }
   @media (max-width: 900px) { .project-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .project-grid { grid-template-columns: 1fr; } }
+  /* Seis obras a una columna eran tres pantallas y media de scroll. */
+  @media (max-width: 560px) { .project-grid { gap: 2px; } }
 
   .project-card {
     position: relative;
@@ -153,6 +154,14 @@ const ACCENTS = ['yellow', 'turq', 'pink', 'green', 'orange', 'blue'];
 
   .pc-title { font-family: var(--serif); font-size: 1.2rem; margin-bottom: 6px; color: var(--gesso); }
   .pc-tags { font-size: 0.74rem; color: #d8d3c9; }
+
+  @media (max-width: 700px) {
+    .projects { padding: 72px 0; }
+    .pc-overlay { padding: 14px; }
+    .pc-title { font-size: 0.98rem; }
+    .pc-tags { font-size: 0.66rem; }
+    .pc-stroke { width: 34px; height: 4px; margin-bottom: 8px; }
+  }
 
   /* En táctil no hay hover: la información se muestra siempre. */
   @media (hover: none) {

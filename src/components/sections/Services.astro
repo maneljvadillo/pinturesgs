@@ -97,6 +97,7 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
     padding: var(--section-y) 0 100px;
     background: var(--gesso);
   }
+  @media (max-width: 700px) { .services { padding: 72px 0 60px; } }
 
   .services-grid {
     display: grid;
@@ -104,8 +105,13 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
     gap: 3px;
     list-style: none;
   }
+  /*
+    Dos columnas también en el móvil. A una columna, nueve servicios cuadrados
+    sumaban más de cuatro pantallas de alto ellos solos: la mitad de la página
+    era esta rejilla y no se llegaba nunca a lo de abajo.
+  */
   @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .services-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .services-grid { gap: 2px; } }
 
   .service-tile {
     position: relative;
@@ -250,6 +256,16 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
     border: none;
   }
   .tag-more:hover { background: #fff; }
+
+  /* Con la tarjeta a media pantalla, el interior tiene que encoger. */
+  @media (max-width: 560px) {
+    .st-content { padding: 14px; }
+    .st-emoji { width: 36px; height: 36px; font-size: 1.1rem; top: 12px; left: 12px; }
+    .st-name { font-size: 1rem; margin-bottom: 6px; }
+    .tag-chip, .tag-more { font-size: 0.62rem; padding: 2px 8px; }
+    .st-tags { max-height: 22px; }
+    .service-tile::after { height: 4px; }
+  }
 </style>
 
 <script>

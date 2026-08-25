@@ -86,6 +86,8 @@
 @media (max-width: 768px) {
   :root {
     --wrap-pad: 22px;
-    --section-y: 84px;
+    /* 84px entre secciones eran casi media pantalla de móvil vacía cada vez
+       que cambiaba de bloque, y la página encadena ocho. */
+    --section-y: 64px;
   }
 }

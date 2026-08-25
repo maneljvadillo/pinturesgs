@@ -11,7 +11,7 @@ import { CONTACT, SITE } from '~/data/site';
 const hasNumber = !CONTACT.whatsapp.pending && CONTACT.whatsapp.value !== '';
 const href = hasNumber
   ? `https://wa.me/${CONTACT.whatsapp.value}?text=${encodeURIComponent(`Hola, me gustaría pedir un presupuesto a ${SITE.name}.`)}`
-  : '#presupuesto';
+  : '/presupuesto';
 const label = hasNumber ? 'Escribir por WhatsApp' : 'Pedir presupuesto';
 ---
 

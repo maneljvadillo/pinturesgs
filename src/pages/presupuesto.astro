@@ -1,0 +1,29 @@
+---
+/**
+ * Página de presupuesto.
+ *
+ * El formulario vivía al final de la home. Se ha movido aquí para que la
+ * portada no termine en un bloque largo de campos y para que "Pedir
+ * presupuesto" lleve a un sitio concreto desde cualquier punto de la web.
+ *
+ * El componente es el mismo de antes, sin tocar: mismos campos, misma
+ * validación y el mismo envío a /api/presupuesto.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Budget from '~/components/sections/Budget.astro';
+---
+
+<BaseLayout
+  title="Pedir presupuesto — PINTURESGS"
+  description="Cuéntanos qué necesitas pintar y preparamos un presupuesto personalizado, sin compromiso."
+  darkTop
+>
+  <div class="budget-page">
+    <Budget />
+  </div>
+</BaseLayout>
+
+<style>
+  /* El menú es fijo y mide ~86px: sin este aire el titular queda debajo. */
+  .budget-page :global(.budget) { padding-top: 168px; }
+</style>

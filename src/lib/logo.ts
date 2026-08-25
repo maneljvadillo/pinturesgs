@@ -23,4 +23,4 @@ export const LOGOS = {
 } as const;
 
 /** La variante que usa toda la web. Cambia esta línea y cambia en todas partes. */
-export const DEFAULT_LOGO: LogoVariant = 'clasico';
+export const DEFAULT_LOGO: LogoVariant = 'realista-b';

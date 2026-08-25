@@ -122,20 +122,77 @@ export function initHeroReveal(): void {
     kick();
   }
 
+  // ── Pasada automática (táctil) ──────────────────────────────────────────
+  /*
+    En el móvil no se pinta con el dedo. Arrastrar es lo que se hace para
+    bajar por la página, así que cada gesto de scroll dejaba un trazo de color
+    por encima del titular: parecía un fallo, no un efecto.
+
+    En su lugar la brocha da una pasada sola cada pocos segundos por la franja
+    baja del hero, que es la más despejada. Se alimenta el mismo trazo que usa
+    el puntero, así que la cicatrización y el dibujado son idénticos.
+  */
+  const AUTO_TRAVEL = 1900;  // lo que tarda en cruzar
+  const AUTO_PAUSE = 5000;   // descanso entre pasadas
+  let autoRaf = 0;
+  let autoTimer: number | undefined;
+  let autoBusy = false;
+
+  function autoStroke(): void {
+    autoBusy = true;
+    const start = performance.now();
+    const step = (now: number): void => {
+      const t = (now - start) / AUTO_TRAVEL;
+      if (t >= 1) {
+        autoBusy = false;
+        scheduleStroke(AUTO_PAUSE);
+        return;
+      }
+      // Suavizado en la entrada y en la salida: arranca y frena como una mano.
+      const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+      const x = -0.08 * w + e * 1.16 * w;
+      const y = h * (0.84 - 0.13 * Math.sin(e * Math.PI));
+      trail.push({ x, y, t: now });
+      if (trail.length > MAX_POINTS) trail.shift();
+      kick();
+      autoRaf = requestAnimationFrame(step);
+    };
+    autoRaf = requestAnimationFrame(step);
+  }
+
+  /*
+    Programar es idempotente: si ya hay una pasada en curso o una esperando, no
+    se toca. Sin esto, el observador de visibilidad (que dispara nada más
+    empezar) pisaba la primera pasada y la retrasaba hasta el descanso largo.
+  */
+  function scheduleStroke(delay: number): void {
+    if (autoBusy || autoTimer !== undefined) return;
+    autoTimer = window.setTimeout(() => {
+      autoTimer = undefined;
+      autoStroke();
+    }, delay);
+  }
+
+  function stopAuto(): void {
+    window.clearTimeout(autoTimer);
+    autoTimer = undefined;
+    cancelAnimationFrame(autoRaf);
+    autoBusy = false;
+  }
+
   // ── Arranque ────────────────────────────────────────────────────────────
   resize();
   canvas.classList.add('ready');
 
-  hero.addEventListener('pointermove', (e) => addPoint(e.clientX, e.clientY), { passive: true });
-  // En táctil el dedo arrastra: se revela igual, sin bloquear el scroll.
-  hero.addEventListener(
-    'touchmove',
-    (e) => {
-      const t = e.touches[0];
-      if (t) addPoint(t.clientX, t.clientY);
-    },
-    { passive: true },
-  );
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const wantsMotion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (finePointer) {
+    hero.addEventListener('pointermove', (e) => addPoint(e.clientX, e.clientY), { passive: true });
+  } else if (wantsMotion) {
+    // Primera pasada al poco de cargar, para que se vea la idea sin tocar nada.
+    scheduleStroke(1400);
+  }
 
   let resizeTimer: number | undefined;
   window.addEventListener('resize', () => {
@@ -146,14 +203,20 @@ export function initHeroReveal(): void {
   // caducada y volver a tomarla en el siguiente punto del trazo.
   window.addEventListener('scroll', () => { rectDirty = true; }, { passive: true });
 
-  // Si el hero deja de verse, se corta el bucle aunque quedara trazo vivo.
+  // Si el hero deja de verse, se corta el bucle (y la pasada automática)
+  // aunque quedara trazo vivo. Al volver, la pasada se reanuda.
   new IntersectionObserver(
     ([entry]) => {
       if (!entry?.isIntersecting) {
         cancelAnimationFrame(rafId);
+        stopAuto();
         running = false;
         trail = [];
         draw();
+      } else if (!finePointer && wantsMotion) {
+        // Al volver a entrar en pantalla, se reanuda sin pisar la pasada en
+        // curso ni adelantar la primera, que ya está programada.
+        scheduleStroke(AUTO_PAUSE);
       }
     },
     { threshold: 0 },

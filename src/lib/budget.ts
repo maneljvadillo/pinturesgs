@@ -28,3 +28,10 @@ export function formatBytes(n: number): string {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} kB`;
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
+
+
+/**
+ * Dónde deja "Pinta el teu espai" el resumen del diseño para que lo recoja el
+ * formulario, que ahora vive en otra página.
+ */
+export const DESIGN_KEY = 'pinturesgs:diseno';

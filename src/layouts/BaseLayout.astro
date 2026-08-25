@@ -13,8 +13,10 @@ interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
+  /** La página arranca con un bloque oscuro: el menú tiene que ir en claro. */
+  darkTop?: boolean;
 }
-const { title, description, noindex } = Astro.props;
+const { title, description, noindex, darkTop } = Astro.props;
 ---
 
 <!doctype html>
@@ -27,7 +29,7 @@ const { title, description, noindex } = Astro.props;
 
     <Toast />
 
-    <Header />
+    <Header onDark={darkTop} />
 
     <main id="contenido">
       <slot />

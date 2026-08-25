@@ -41,6 +41,11 @@ export function initBrushCursor(): void {
   let rafId = 0;
   let lastT = 0;
 
+  /** ¿El puntero está sobre algo pulsable (enlace, botón, control)? */
+  function overInteractive(target: EventTarget | null): boolean {
+    return target instanceof Element && !!target.closest('a, button, input, select, textarea, [role="button"]');
+  }
+
   /** Devuelve `b` reescrito al giro más próximo a `a` (evita el salto ±360°). */
   function nearestTurn(a: number, b: number): number {
     let d = (b - a) % 360;
@@ -111,8 +116,25 @@ export function initBrushCursor(): void {
   );
 
   zones.forEach((zone) => {
-    zone.addEventListener('pointerenter', () => brush.classList.add('show'));
+    // `pointerenter` no basta: si la página carga con el ratón ya dentro del
+    // hero, ese evento no llega nunca y la brocha no aparecía hasta salir y
+    // volver a entrar. Con `pointermove` se muestra en cuanto se mueve.
+    const show = (e: PointerEvent) => {
+      if (overInteractive(e.target)) return;
+      brush.classList.add('show');
+    };
+    zone.addEventListener('pointerenter', show);
+    zone.addEventListener('pointermove', show);
     zone.addEventListener('pointerleave', () => brush.classList.remove('show'));
+
+    /*
+      Sobre un botón o un enlace mandan la mano del sistema y la brocha se
+      esconde. Antes se veían las dos a la vez: el navegador pinta su cursor de
+      "pulsable" (los <a> lo traen de serie) y encima quedaba la brocha.
+    */
+    zone.addEventListener('pointerover', (e) => {
+      if (overInteractive(e.target)) brush.classList.remove('show');
+    });
 
     // Si la zona deja de verse (scroll sin mover el ratón) la brocha se va con
     // ella: no debe quedarse flotando sobre el resto de la página.

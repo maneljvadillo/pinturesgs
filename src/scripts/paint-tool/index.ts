@@ -15,6 +15,7 @@
  * y borrar la retira. Para dos colores distintos hacen falta dos zonas.
  */
 import { showToast } from '~/scripts/toast';
+import { DESIGN_KEY } from '~/lib/budget';
 import { colorName } from '~/data/palette';
 import type { FractionRect, Region, ToolName } from './types';
 import { History, cloneForWrite } from './history';
@@ -477,30 +478,6 @@ export async function initPaintTool(): Promise<void> {
     requestAnimationFrame(step);
   });
 
-  // ── Guardar el diseño ───────────────────────────────────────────────────
-  document.getElementById('saveDesignBtn')?.addEventListener('click', () => {
-    // Se exporta la composición actual, con una firma discreta.
-    const out = makeCanvas(W, H + 54);
-    const g = ctx2d(out);
-    g.fillStyle = '#FAFAF8';
-    g.fillRect(0, 0, W, H + 54);
-    g.drawImage(canvas, 0, 0);
-    g.fillStyle = '#161513';
-    g.font = '500 22px Inter, system-ui, sans-serif';
-    g.fillText('PINTURESGS · ' + describeDesign(), 20, H + 34);
-
-    out.toBlob((blob) => {
-      if (!blob) { showToast('No se ha podido guardar la imagen.'); return; }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'pinturesgs-mi-diseno.png';
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Diseño descargado');
-    }, 'image/png');
-  });
-
   // ── Traspaso al formulario ──────────────────────────────────────────────
   function describeDesign(): string {
     const painted = regions.filter((r) => r.color);
@@ -516,9 +493,20 @@ export async function initPaintTool(): Promise<void> {
     if (chip) chip.textContent = `🎨 Tu diseño: ${summary}`;
   }
 
+  /*
+    El formulario ya no está en esta página, así que el resumen del diseño se
+    deja en `sessionStorage` justo antes de navegar y lo recoge el formulario
+    al cargar. `sessionStorage` y no la URL: el resumen puede ser largo y no
+    tiene por qué ir a la vista en la barra de direcciones.
+  */
   document.getElementById('wantResultBtn')?.addEventListener('click', () => {
     syncDesignSummary();
-    document.getElementById('formContextChip')?.classList.add('show');
+    try {
+      const summary = describeDesign();
+      if (regions.some((r) => r.color)) sessionStorage.setItem(DESIGN_KEY, summary);
+    } catch {
+      /* Modo privado o almacenamiento lleno: el formulario funciona igual. */
+    }
   });
 
   // ── Arranque ────────────────────────────────────────────────────────────
