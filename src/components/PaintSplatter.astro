@@ -276,6 +276,16 @@ const DROPS = [
     to   { transform: translateY(var(--run)) scale(1); }
   }
 
+  /*
+    En escritorio el logotipo entra rodando, no de frente. El destello y los
+    dos pegotes grandes cuentan un golpe contra el objetivo de la cámara y ahí
+    ya no pega nada: lo que queda es la pintura que suelta la bola al frenar,
+    o sea las gotas. Menos elementos, y además los dos más caros de pintar.
+  */
+  @media (min-width: 901px) {
+    .ps-bloom, .ps-splash { display: none; }
+  }
+
   /* Nada de esto tiene sentido si se ha pedido menos movimiento. */
   @media (prefers-reduced-motion: reduce) {
     .paint-splatter { display: none; }

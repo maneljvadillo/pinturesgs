@@ -251,6 +251,15 @@ import BrushCursor from '~/components/BrushCursor.astro';
 
   /* Con movimiento reducido la capa de color se queda quieta. Lo del
      logotipo lo resuelve HeroLogo.astro por su cuenta. */
+  /*
+    En escritorio el logotipo no se estrella contra el cristal: llega rodando
+    y frena. Una cámara no se sacude porque una bola se pare delante, así que
+    aquí no hay temblor. En móvil sí, porque allí sí te lo tiran de frente.
+  */
+  @media (min-width: 901px) {
+    .hero-inner { animation: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .hero-color-layer { animation: none; }
     .hero-inner { animation: none; transform: none; }

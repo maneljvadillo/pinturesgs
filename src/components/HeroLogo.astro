@@ -1,6 +1,18 @@
 ---
 /**
- * EL LOGOTIPO DEL HERO — te lo tiran a la cara.
+ * EL LOGOTIPO DEL HERO — dos entradas distintas según la pantalla.
+ *
+ *   MÓVIL (hasta 900 px)   te lo tiran a la cara: llega de lejos, crece y
+ *                          choca contra el cristal.
+ *   ESCRITORIO (901+)      entra RODANDO desde el otro lado, cruza el hero y
+ *                          frena en su sitio.
+ *
+ * No es capricho: en móvil el logotipo está centrado y debajo del texto, así
+ * que sólo puede venir de frente. En escritorio está a la derecha y tiene
+ * media pantalla de recorrido libre a su izquierda — y siendo un salpicón
+ * redondo, rodar es lo que pide la forma.
+ *
+ * ── EL LANZAMIENTO (móvil) ────────────────────────────────────────────────
  *
  * No entra: LLEGA. Aparece lejísimos y diminuto, se abalanza sobre la cámara
  * acelerando y desenfocado por la velocidad, y a los 300 ms (`--hero-impact`)
@@ -272,6 +284,55 @@ const logoMask = mask.src;
   @keyframes logoGloss {
     0%        { transform: translate3d(0, 0, 0); }
     38%, 100% { transform: translate3d(310%, 0, 0); }
+  }
+
+  /*
+    ── ESCRITORIO: entra rodando ─────────────────────────────────────────
+    La clave para que se lea como RODAR y no como "girar mientras se desliza"
+    es que el giro no sea decorativo: lo marca el perímetro. Una circunferencia
+    de ancho W avanza pi*W en cada vuelta, así que recorrer un P% del propio
+    ancho obliga a girar P * 1.146 grados. Todos los valores de abajo salen de
+    esa cuenta:
+
+        -360% -> -412.5deg     4.5% ->  5.2deg
+                                -1.4% -> -1.6deg
+
+    Si se desacoplan aunque sea un poco, el ojo lo pilla al momento: parece que
+    patina. Si se cambia el recorrido, hay que recalcular el giro.
+
+    El recorrido es del 360% de su propio ancho porque tiene que ARRANCAR
+    FUERA del encuadre; si no, aparece de la nada a media pantalla y ya no
+    entra rodando, se materializa. El recorrido mínimo que hace falta depende
+    del ancho de pantalla: 319% a 901 px, 321% a 1024, 287% a 1440, 325% a
+    1920. Con 340% salía por los pelos —a 1024 px sobraban ocho píxeles—, así
+    que va al 360% y queda más de cien píxeles de holgura en todos.
+
+    Da 1,15 vueltas: una vuelta entera bien vista, y cae perfectamente
+    derecho.
+
+    Al final se pasa de largo un 4.5%, vuelve un 1.4% y se para. Eso es una
+    moneda asentándose, y es lo que hace que "se quede en su sitio" en vez de
+    frenar en seco.
+
+    Frenada de rodadura: arranca rápido y pierde fuelle, como algo que rueda
+    por inercia. La curva del primer tramo es prácticamente una parábola de
+    deceleración constante, que es justo la física del caso.
+  */
+  @media (min-width: 901px) {
+    .lt-motion {
+      animation: ltRoll 860ms linear both;
+    }
+    @keyframes ltRoll {
+      0%   { opacity: 1; transform: translate3d(-360%, 0, 0) rotate(-412.5deg);
+             animation-timing-function: cubic-bezier(.25, .46, .45, .94); }
+      72%  { transform: translate3d(4.5%, 0, 0) rotate(5.2deg);
+             animation-timing-function: cubic-bezier(.34, 0, .36, 1); }
+      88%  { transform: translate3d(-1.4%, 0, 0) rotate(-1.6deg);
+             animation-timing-function: cubic-bezier(.4, 0, .4, 1); }
+      100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    }
+    /* Recoge el final de la rodada, igual que en móvil recoge el aterrizaje. */
+    .hero-gs-inner { animation-delay: 700ms; }
   }
 
   @media (max-width: 900px) {
