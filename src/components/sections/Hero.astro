@@ -8,14 +8,8 @@
  *                         línea fina que se cicatriza sola en ~320 ms.
  *   2. .hero-inner        el mensaje y el logotipo, siempre por encima.
  */
-import Logo from '~/components/Logo.astro';
+import HeroLogo from '~/components/HeroLogo.astro';
 import BrushCursor from '~/components/BrushCursor.astro';
-import { LOGOS, DEFAULT_LOGO } from '~/lib/logo';
-import { SITE } from '~/data/site';
-
-/* El brillo de pintura húmeda se recorta con la silueta del propio logotipo:
-   sin esto sería una banda blanca rectangular cruzando el aire. */
-const logoMask = LOGOS[DEFAULT_LOGO].src;
 ---
 
 <section class="hero brush-zone" id="top">
@@ -50,10 +44,7 @@ const logoMask = LOGOS[DEFAULT_LOGO].src;
     </div>
 
     <div class="hero-gs">
-      <div class="hero-gs-inner" style={`--logo-mask: url("${logoMask}");`}>
-        <Logo width={520} eager alt={`${SITE.name}`} />
-        <span class="hero-gs-gloss" aria-hidden="true"><span class="gloss-band"></span></span>
-      </div>
+      <HeroLogo />
     </div>
   </div>
 
@@ -182,126 +173,29 @@ const logoMask = LOGOS[DEFAULT_LOGO].src;
   .hero-ctas { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
 
   /*
-    ── El logotipo ────────────────────────────────────────────────────────
-    Dos elementos anidados porque son dos animaciones con vidas distintas:
+    El logotipo y su entrada ("lanzan la pintura y de la mancha sale el
+    logotipo") viven en HeroLogo.astro. Aquí sólo queda dónde se coloca y
+    cuánto mide, que es cosa de la rejilla del hero.
 
-      .hero-gs        el "pintado": un canto diagonal barre el logotipo de
-                      izquierda a derecha, como una pasada de brocha. Va en el
-                      contenedor para no pelearse con las transformaciones.
-      .hero-gs-inner  la entrada (sube, crece, se pasa de rosca y vuelve) y,
-                      encadenada detrás, la respiración en reposo.
-
-    Todo se anima con transform / opacity / clip-path: nada de esto provoca
-    reflow ni repinta el logotipo.
+    `container-type` de las salpicaduras se mide sobre el ancho de ESTA caja,
+    así que el ancho tiene que estar definido aquí.
   */
   .hero-gs {
     justify-self: end;
     user-select: none;
     width: clamp(220px, 30vw, 480px);
-    animation: logoWipe 1.05s var(--ease-out-soft) .05s backwards;
-  }
-  .hero-gs-inner {
-    position: relative;
-    animation:
-      logoIntro 1.25s var(--ease-overshoot) both,
-      logoBreathe 7s ease-in-out 1.3s infinite;
-    /* Dos sombras: una pegada al canto, que da grosor de pintura, y la de
-       siempre, amplia y suave, que lo separa del fondo. */
-    filter:
-      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
-      drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
-    will-change: transform;
-    backface-visibility: hidden;
-  }
-  /* Realce de color del logotipo: más pigmento, sin tocar el archivo. */
-  .hero-gs :global(img) {
-    width: 100%;
-    height: auto;
-    display: block;
-    filter: saturate(1.4) contrast(1.1);
   }
 
-  /*
-    Brillo de pintura húmeda. La banda es un hijo que se desplaza con
-    `transform` (el compositor lo mueve solo) y el contenedor la recorta con la
-    silueta del logotipo, así el reflejo nunca se sale de la pintura.
-  */
-  .hero-gs-gloss {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    pointer-events: none;
-    mix-blend-mode: screen;
-    -webkit-mask-image: var(--logo-mask);
-    mask-image: var(--logo-mask);
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-  }
-  .gloss-band {
-    position: absolute;
-    top: -30%; bottom: -30%;
-    left: -60%;
-    width: 60%;
-    background: linear-gradient(
-      100deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.10) 35%,
-      rgba(255, 255, 255, 0.55) 50%,
-      rgba(255, 255, 255, 0.10) 65%,
-      transparent 100%
-    );
-    transform: translate3d(0, 0, 0);
-    animation: logoGloss 7s ease-in-out 2s infinite;
-  }
-  @keyframes logoGloss {
-    0%       { transform: translate3d(0, 0, 0); }
-    38%, 100% { transform: translate3d(310%, 0, 0); }
-  }
-
-  /*
-    El recorte se sale mucho de la caja (de -74% a 214%) porque si no recorta
-    la sombra proyectada y deja un rectángulo gris alrededor del logotipo.
-    Y el relleno es `backwards`, no `both`: al terminar, el elemento vuelve a
-    su `clip-path: none` y no queda ningún recorte permanente.
-  */
-  @keyframes logoWipe {
-    0%   { clip-path: polygon(-60% -70%, -60% -70%, -74% 170%, -74% 170%); }
-    100% { clip-path: polygon(-60% -70%, 214% -70%, 200% 170%, -74% 170%); }
-  }
-  @keyframes logoIntro {
-    0%   { opacity: 0; transform: translate3d(0, 54px, 0) scale(.58) rotate(-9deg); }
-    55%  { opacity: 1; transform: translate3d(0, -12px, 0) scale(1.10) rotate(3.5deg); }
-    78%  { opacity: 1; transform: translate3d(0, 4px, 0)  scale(.965) rotate(-1.4deg); }
-    100% { opacity: 1; transform: translate3d(0, 0, 0)    scale(1)    rotate(0deg); }
-  }
-  /* Reposo: flota, se balancea un grado escaso y respira. Lo justo para que
-     no parezca una imagen pegada, sin robarle atención al mensaje. */
-  @keyframes logoBreathe {
-    0%   { transform: translate3d(0, 0, 0)     rotate(-0.7deg) scale(1); }
-    50%  { transform: translate3d(0, -13px, 0) rotate(0.9deg)  scale(1.018); }
-    100% { transform: translate3d(0, 0, 0)     rotate(-0.7deg) scale(1); }
-  }
   @media (max-width: 900px) {
     .hero-inner { grid-template-columns: 1fr; text-align: center; }
     .hero-message, .hero-sub { margin-left: auto; margin-right: auto; }
     .hero-ctas { justify-content: center; }
     .hero-gs { justify-self: center; width: clamp(160px, 45vw, 260px); margin-top: 10px; }
-    /* En pantallas pequeñas el mismo recorrido se ve exagerado: se acorta. */
-    .hero-gs-inner { animation-name: logoIntro, logoBreatheSm; }
-    @keyframes logoBreatheSm {
-      0%   { transform: translate3d(0, 0, 0)    rotate(-0.5deg) scale(1); }
-      50%  { transform: translate3d(0, -8px, 0) rotate(0.6deg)  scale(1.014); }
-      100% { transform: translate3d(0, 0, 0)    rotate(-0.5deg) scale(1); }
-    }
   }
 
-  /* Con movimiento reducido el logotipo aparece, pero ni rebota ni respira. */
+  /* Con movimiento reducido la capa de color se queda quieta. Lo del
+     logotipo lo resuelve HeroLogo.astro por su cuenta. */
   @media (prefers-reduced-motion: reduce) {
-    .hero-gs { animation: none; clip-path: none; }
-    .hero-gs-inner { animation: none; opacity: 1; transform: none; }
-    .hero-gs-gloss { display: none; }
     .hero-color-layer { animation: none; }
   }
 

@@ -7,13 +7,53 @@
  *
  * Se activa únicamente en dispositivos con puntero fino: en táctil no hay
  * cursor que sustituir, y forzarlo dejaría un icono flotando sin sentido.
+ *
+ * ── Dónde está el "punto" del cursor ──────────────────────────────────────
+ * La brocha se dibuja recta (mango arriba, punta abajo) y se inclina con un
+ * `rotate` en el SVG. La PUNTA queda en (20, 62) del `viewBox`, que a 56 px
+ * de lado son (15.56, 48.22) px de CSS: eso es `--tip-x` / `--tip-y`.
+ *
+ * Esas dos variables las usan tres sitios y por eso están declaradas una vez
+ * en el CSS en vez de repetidas: el `transform-origin` (para que al inclinarse
+ * gire sobre la punta y no sobre la esquina), el `transform-origin` del efecto
+ * de presión, y el script, que las lee para descontarlas de la posición del
+ * puntero. Antes el ancla era la esquina superior izquierda del icono: la
+ * pintura salía a cuarenta píxeles de donde estaba el ratón y era imposible
+ * apuntar con ella.
  */
 ---
 <div class="brush-cursor" id="brushCursor" aria-hidden="true">
-  <svg width="46" height="46" viewBox="0 0 46 46">
+  <svg width="56" height="56" viewBox="0 0 72 72">
     <defs>
+      <!-- Madera barnizada: el canto oscuro a los lados y la luz en el centro
+           es lo que hace que un cilindro parezca un cilindro. -->
+      <linearGradient id="bcWood" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#6B4320" />
+        <stop offset="22%" stop-color="#B67C40" />
+        <stop offset="48%" stop-color="#DCA765" />
+        <stop offset="76%" stop-color="#9A6530" />
+        <stop offset="100%" stop-color="#5E3A1C" />
+      </linearGradient>
+
+      <!-- Virola de metal: bandas alternas claras y oscuras = reflejo. -->
+      <linearGradient id="bcFerrule" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#75786F" />
+        <stop offset="17%" stop-color="#D6D8D3" />
+        <stop offset="40%" stop-color="#F2F3F0" />
+        <stop offset="60%" stop-color="#A9ACA6" />
+        <stop offset="84%" stop-color="#CFD1CC" />
+        <stop offset="100%" stop-color="#6A6D65" />
+      </linearGradient>
+
+      <!-- Cerda cruda: la parte que la pintura no ha alcanzado. -->
+      <linearGradient id="bcBristle" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#F1E7D4" />
+        <stop offset="55%" stop-color="#DCC9A4" />
+        <stop offset="100%" stop-color="#C6AE85" />
+      </linearGradient>
+
       <!-- Paleta a tope de saturación: es la pintura que la brocha arrastra. -->
-      <linearGradient id="brushGrad" x1="0" y1="0" x2="1" y2="1">
+      <linearGradient id="bcPaint" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stop-color="#FF0033" />
         <stop offset="18%" stop-color="#FF6A00" />
         <stop offset="36%" stop-color="#FFE000" />
@@ -23,23 +63,84 @@
         <stop offset="100%" stop-color="#D400FF" />
       </linearGradient>
     </defs>
-    <rect x="4" y="4" width="8" height="20" rx="1.5" fill="#8B5E34" />
-    <rect x="3" y="22" width="10" height="6" fill="#B0B0AC" />
-    <path
-      class="brush-bristles"
-      d="M3 28 C3 28 2 40 5 44 C6.5 45.7 9.5 45.7 11 44 C14 40 13 28 13 28 Z"
-      fill="url(#brushGrad)"
-    />
+
+    <!-- Se dibuja recta y se gira 30° sobre la punta: así la geometría de
+         arriba se lee de un vistazo y el ángulo es un solo número. -->
+    <g transform="rotate(30 20 62)">
+      <!-- ── Mango ──────────────────────────────────────────────────── -->
+      <path
+        d="M20 3c2.7 0 4.6 1.9 4.5 4.5l-.9 12.6.6 11 .4 2.4h-9.2l.4-2.4.6-11-.9-12.6C15.4 4.9 17.3 3 20 3Z"
+        fill="url(#bcWood)"
+      />
+      <path
+        d="M17.4 5.6c-.6 1.6-.7 3.4-.5 5.4l.5 9 .5 11h1.6l-.5-11-.4-9c-.2-2-.1-3.8.4-5.4z"
+        fill="rgba(255,255,255,.26)"
+      />
+
+      <!-- ── Virola ─────────────────────────────────────────────────── -->
+      <path d="M15.2 31.2h9.6l.7 10.2h-11z" fill="url(#bcFerrule)" />
+      <path d="M16.4 31.6l.4 9.4h1.5l-.5-9.4z" fill="rgba(255,255,255,.34)" />
+      <!-- Los dos engastes: sin ellos la virola es un rectángulo gris. -->
+      <path d="M15.4 34.4h9.2M15.2 37.8h9.6" stroke="rgba(0,0,0,.3)" stroke-width=".9" fill="none" />
+
+      <!-- ── Cerdas ─────────────────────────────────────────────────── -->
+      <path
+        d="M15.4 41.2c-1.3 5-2 10.4-1.9 15.6 0 2.2.5 4 1.3 5.2h10.4c.8-1.2 1.3-3 1.3-5.2.1-5.2-.6-10.6-1.9-15.6z"
+        fill="url(#bcBristle)"
+      />
+
+      <!-- La pintura sólo moja la mitad de abajo, y con un borde irregular:
+           es por donde ha subido, no una línea recta. -->
+      <g class="bc-paint">
+        <path
+          d="M14.1 50.6c1.9-.4 2.8-2.6 4.6-2.8 1.9-.2 2.4 2 4.3 1.6 1.2-.3 2-1.3 2.6-2.4.6 3.2.9 6.4.9 9.8 0 2.2-.5 4-1.3 5.2H14.8c-.8-1.2-1.3-3-1.3-5.2 0-2.2.2-4.4.6-6.2z"
+          fill="url(#bcPaint)"
+        />
+        <!-- Gota a punto de caer del canto. -->
+        <ellipse cx="23.1" cy="63.7" rx="1.5" ry="1.9" fill="url(#bcPaint)" opacity=".9" />
+      </g>
+
+      <!-- Hebras sueltas por encima: es lo que separa un pegote de un pincel. -->
+      <g stroke-linecap="round" fill="none">
+        <path
+          d="M16.6 42.2c-1 5-1.4 10.2-1.3 14.8M18.7 42.2c-.6 5-.9 10.4-.8 15.2M20.8 42.2c-.1 5.2-.1 10.4.1 15.4M22.9 42.2c.4 5 .7 10.2.8 15.2M24.8 42.2c.9 4.8 1.4 10 1.4 14.6"
+          stroke="rgba(0,0,0,.17)"
+          stroke-width=".6"
+        />
+        <path
+          d="M17.6 42.4c-.8 5-1.1 10.2-1 14.8M21.8 42.4c.2 5.2.3 10.4.4 15.2"
+          stroke="rgba(255,255,255,.24)"
+          stroke-width=".55"
+        />
+      </g>
+
+      <!-- Brillo húmedo en el canto que toca la pared. -->
+      <path
+        d="M15.6 60.5c2.9.9 5.9.9 8.8 0"
+        stroke="rgba(255,255,255,.5)"
+        stroke-width="1.1"
+        stroke-linecap="round"
+        fill="none"
+      />
+    </g>
   </svg>
 </div>
 
 <style>
   .brush-cursor {
+    /* La punta de las cerdas dentro del icono. Ver la nota de arriba: el
+       script lee estas dos variables, no las repite. */
+    --tip-x: 15.56px;
+    --tip-y: 48.22px;
+
     position: fixed;
     top: 0; left: 0;
-    width: 46px; height: 46px;
+    width: 56px; height: 56px;
     pointer-events: none;
     z-index: 200;
+    /* Girar sobre la punta y no sobre la esquina: al inclinarse, la brocha
+       pivota donde está el ratón en vez de barrer medio icono. */
+    transform-origin: var(--tip-x) var(--tip-y);
     transform: translate3d(-1000px, -1000px, 0);
     opacity: 0;
     transition: opacity .2s ease;
@@ -47,19 +148,29 @@
        que la brocha se mueve sin repintar nada. */
     will-change: transform;
     backface-visibility: hidden;
-    filter: saturate(2.1) contrast(1.12) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    /* Sólo la sombra. Saturar el conjunto (como antes) dejaba la madera y el
+       metal en colores de dibujo animado. */
+    filter: drop-shadow(1px 3px 5px rgba(0, 0, 0, 0.34));
   }
   .brush-cursor.show { opacity: 1; }
 
-  /* El color de la pintura gira entero en 2,4 s. El filtro va sólo sobre las
-     cerdas (46 px): no toca ni el mango ni la virola, y es un coste ínfimo. */
-  .brush-bristles {
-    animation: brushHue 2.4s linear infinite;
-    transform-origin: 8px 36px;
+  /* Al pulsar, la brocha se aplasta contra la pared. Es lo que hace que el
+     clic se sienta; el pivote vuelve a ser la punta. */
+  .brush-cursor svg {
+    display: block;
+    transform-origin: var(--tip-x) var(--tip-y);
+    transition: transform .13s var(--ease-out-soft);
+  }
+  .brush-cursor.press svg { transform: scale(.9); }
+
+  /* El color de la pintura gira entero en 3,6 s. El filtro va SÓLO sobre la
+     pintura: la madera, el metal y las cerdas se quedan con su color. */
+  .bc-paint {
+    animation: brushHue 3.6s linear infinite;
   }
   @keyframes brushHue {
-    from { filter: hue-rotate(0deg) saturate(1.25); }
-    to   { filter: hue-rotate(360deg) saturate(1.25); }
+    from { filter: hue-rotate(0deg) saturate(1.35); }
+    to   { filter: hue-rotate(360deg) saturate(1.35); }
   }
 
   /* Oculta el cursor del sistema dentro de las zonas de brocha. */
@@ -73,7 +184,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .brush-cursor { display: none; }
-    .brush-bristles { animation: none; }
+    .bc-paint { animation: none; }
     :global(.brush-zone) { cursor: auto; }
   }
 </style>
