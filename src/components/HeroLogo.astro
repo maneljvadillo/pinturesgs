@@ -3,14 +3,17 @@
  * EL LOGOTIPO DEL HERO — dos entradas distintas según la pantalla.
  *
  *   MÓVIL (hasta 900 px)   te lo tiran a la cara: llega de lejos, crece y
- *                          choca contra el cristal.
- *   ESCRITORIO (901+)      entra RODANDO desde el otro lado, cruza el hero y
- *                          frena en su sitio.
+ *                          choca contra el cristal. Dura ~1 s.
+ *   ESCRITORIO (901+)      sale de DETRÁS DEL TITULAR, cruza rodando por
+ *                          debajo de las letras y frena en su sitio. Dura
+ *                          3,5 s.
  *
  * No es capricho: en móvil el logotipo está centrado y debajo del texto, así
- * que sólo puede venir de frente. En escritorio está a la derecha y tiene
- * media pantalla de recorrido libre a su izquierda — y siendo un salpicón
- * redondo, rodar es lo que pide la forma.
+ * que sólo puede venir de frente, y en una pantalla pequeña un recorrido largo
+ * marea. En escritorio está a la derecha y tiene media pantalla de recorrido
+ * libre a su izquierda — y siendo un salpicón redondo, rodar es lo que pide la
+ * forma. El detalle de la entrada de escritorio está en su propio bloque, al
+ * final de la hoja.
  *
  * ── EL LANZAMIENTO (móvil) ────────────────────────────────────────────────
  *
@@ -287,52 +290,90 @@ const logoMask = mask.src;
   }
 
   /*
-    ── ESCRITORIO: entra rodando ─────────────────────────────────────────
-    La clave para que se lea como RODAR y no como "girar mientras se desliza"
-    es que el giro no sea decorativo: lo marca el perímetro. Una circunferencia
-    de ancho W avanza pi*W en cada vuelta, así que recorrer un P% del propio
-    ancho obliga a girar P * 1.146 grados. Todos los valores de abajo salen de
-    esa cuenta:
+    ── ESCRITORIO: sale de detrás del titular y cruza rodando ────────────
 
-        -360% -> -412.5deg     4.5% ->  5.2deg
-                                -1.4% -> -1.6deg
+    Tarda 3,4 s de punta a punta (`--hero-intro`), y esa duración es la que
+    decide de dónde sale. Arrancando fuera del encuadre, un recorrido tan largo
+    se ve venir durante segundos y aburre antes de empezar. Así que sale de
+    DETRÁS DE LAS LETRAS: asoma sobre el titular ya rodando, cruza por debajo
+    del texto —se sigue viendo entre las letras, que van encima— sale a campo
+    abierto y frena en su sitio, a la derecha.
+
+    Que pase por DETRÁS lo deciden los z-index de Hero.astro; aquí sólo está el
+    movimiento. Y el titular lleva allí un halo del color del fondo para que las
+    letras se lean mientras la bola de color pasa por debajo.
+
+    ── El giro va atado al recorrido ─────────────────────────────────────
+    Una circunferencia de ancho W avanza pi*W en cada vuelta, así que recorrer
+    un P% del propio ancho obliga a girar P * 1.146 grados. Todos los pares de
+    abajo salen de esa cuenta, y sólo de esa:
+
+        -185% -> -212.0deg      2.6% ->  3.0deg
+        -170% -> -194.8deg     -1.2% -> -1.4deg
+         -39% ->  -44.7deg
 
     Si se desacoplan aunque sea un poco, el ojo lo pilla al momento: parece que
     patina. Si se cambia el recorrido, hay que recalcular el giro.
 
-    El recorrido es del 360% de su propio ancho porque tiene que ARRANCAR
-    FUERA del encuadre; si no, aparece de la nada a media pantalla y ya no
-    entra rodando, se materializa. El recorrido mínimo que hace falta depende
-    del ancho de pantalla: 319% a 901 px, 321% a 1024, 287% a 1440, 325% a
-    1920. Con 340% salía por los pelos —a 1024 px sobraban ocho píxeles—, así
-    que va al 360% y queda más de cien píxeles de holgura en todos.
+    El -185% de salida está elegido para que el punto de partida caiga sobre el
+    titular en cualquier pantalla de escritorio: la caja del logotipo mide
+    30vw y el titular empieza siempre a menos de dos anchos suyos a la
+    izquierda. Da algo más de media vuelta en todo el viaje, que a esta
+    velocidad se lee de sobra como rodar.
 
-    Da 1,15 vueltas: una vuelta entera bien vista, y cae perfectamente
-    derecho.
+    ── Por qué no se encalla ─────────────────────────────────────────────
+    En un recorrido de tres segundos y medio la velocidad no puede caer a cero
+    en ningún punto intermedio, y eso hay que repartirlo a mano:
 
-    Al final se pasa de largo un 4.5%, vuelve un 1.4% y se para. Eso es una
-    moneda asentándose, y es lo que hace que "se quede en su sitio" en vez de
-    frenar en seco.
+      0 -> 7%    arranca. Sale de parado y coge la velocidad de crucero.
+      7 -> 55%   crucero, y LINEAL. Una bola que rueda por un suelo llano va a
+                 velocidad casi constante; una curva de "ease" en este tramo es
+                 exactamente lo que hace que parezca que duda a mitad de camino.
+      55 -> 84%  frena. Entra a la velocidad de crucero y llega a cero justo
+                 cuando se pasa de largo un 2,6%.
+      84 -> 100% se asienta: vuelve un pelín y se para. Eso es una moneda
+                 posándose, y es lo que hace que "se quede en su sitio" en vez
+                 de apagarse.
 
-    Frenada de rodadura: arranca rápido y pierde fuelle, como algo que rueda
-    por inercia. La curva del primer tramo es prácticamente una parábola de
-    deceleración constante, que es justo la física del caso.
+    Las curvas de los dos empalmes no son de catálogo, están calculadas para
+    que la velocidad coincida a los dos lados. Una cubic-bezier sale con
+    pendiente y1/x1 y llega con pendiente (1-y2)/(1-x2); ahí están el 1.27 con
+    el que el arranque entrega el testigo al crucero y el 1.9 con el que el
+    crucero se lo pasa a la frenada.
   */
   @media (min-width: 901px) {
     .lt-motion {
-      animation: ltRoll 860ms linear both;
+      /*
+        Los 100 ms de espera no son estética: dan al navegador el primer
+        fotograma para colocar la página y decodificar el logotipo. Arrancando
+        en el milisegundo cero, el movimiento empieza justo encima de ese
+        trabajo y los primeros fotogramas salen a trompicones.
+      */
+      animation: ltRoll var(--hero-intro) linear 100ms both;
     }
     @keyframes ltRoll {
-      0%   { opacity: 1; transform: translate3d(-360%, 0, 0) rotate(-412.5deg);
-             animation-timing-function: cubic-bezier(.25, .46, .45, .94); }
-      72%  { transform: translate3d(4.5%, 0, 0) rotate(5.2deg);
-             animation-timing-function: cubic-bezier(.34, 0, .36, 1); }
-      88%  { transform: translate3d(-1.4%, 0, 0) rotate(-1.6deg);
-             animation-timing-function: cubic-bezier(.4, 0, .4, 1); }
+      /* Asoma sobre el titular, ya rodando: no se planta ahí de golpe. */
+      0%   { opacity: 0; transform: translate3d(-185%, 0, 0) rotate(-212deg);
+             animation-timing-function: cubic-bezier(.4, 0, .7, .62); }
+      7%   { opacity: 1; transform: translate3d(-170%, 0, 0) rotate(-194.8deg);
+             animation-timing-function: linear; }
+      55%  { opacity: 1; transform: translate3d(-39%, 0, 0) rotate(-44.7deg);
+             animation-timing-function: cubic-bezier(.2, .38, .6, 1); }
+      84%  { transform: translate3d(2.6%, 0, 0) rotate(3deg);
+             animation-timing-function: cubic-bezier(.4, 0, .62, .86); }
+      93%  { transform: translate3d(-1.2%, 0, 0) rotate(-1.4deg);
+             animation-timing-function: cubic-bezier(.33, .3, .6, 1); }
       100% { transform: translate3d(0, 0, 0) rotate(0deg); }
     }
-    /* Recoge el final de la rodada, igual que en móvil recoge el aterrizaje. */
-    .hero-gs-inner { animation-delay: 700ms; }
+    /*
+      La respiración entra ANTES de que la rodada termine, igual que en móvil
+      entra antes de que acabe el aterrizaje: como van en cajas distintas, las
+      dos transformaciones se componen y no hay ni un fotograma de logotipo
+      parado entre una cosa y la otra. Ahí es donde se notaría el parón.
+    */
+    .hero-gs-inner { animation-delay: 2900ms; }
+    /* El reflejo barre cuando la pintura ya está quieta, no antes. */
+    .gloss-band { animation-delay: 3800ms; }
   }
 
   @media (max-width: 900px) {

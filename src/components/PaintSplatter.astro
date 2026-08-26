@@ -121,9 +121,17 @@ const DROPS = [
   .ps-splash {
     position: absolute;
     left: var(--x); top: var(--y);
-    width: var(--s);
+    /*
+      El tamaño de los pegotes se mide contra `--ps-k`, que vale 1 en móvil y
+      la mitad en escritorio. En móvil el cubo te lo tiran a la cara y el
+      pegote tiene que llenar pantalla; en escritorio es la pintura que suelta
+      una bola al pararse, y al tamaño de móvil no se lee como salpicón, se lee
+      como una niebla de colores encima de media página.
+    */
+    --sz: calc(var(--s) * var(--ps-k, 1));
+    width: var(--sz);
     aspect-ratio: 1;
-    margin: calc(var(--s) * -.5) 0 0 calc(var(--s) * -.5);
+    margin: calc(var(--sz) * -.5) 0 0 calc(var(--sz) * -.5);
     background: var(--rainbow);
     border-radius: var(--r);
     filter: blur(10px) saturate(1.4);
@@ -277,13 +285,23 @@ const DROPS = [
   }
 
   /*
-    En escritorio el logotipo entra rodando, no de frente. El destello y los
-    dos pegotes grandes cuentan un golpe contra el objetivo de la cámara y ahí
-    ya no pega nada: lo que queda es la pintura que suelta la bola al frenar,
-    o sea las gotas. Menos elementos, y además los dos más caros de pintar.
+    En escritorio el logotipo entra rodando, no de frente.
+
+    El DESTELLO se va: es lo que ciega cuando te estampan el cubo en el
+    objetivo, y una bola que frena delante de la cámara no ciega a nadie.
+    Además era, con diferencia, lo más caro de pintar de todo el componente
+    (55vmax de degradado radial creciendo).
+
+    Se queda UN pegote, el que está centrado donde la bola frena: es la pintura
+    que suelta al pararse, y entra con las gotas en `--hero-impact`, o sea al
+    final del recorrido. El segundo se va con el destello: cae a media altura y
+    a la izquierda —o sea por detrás de la bola, no en su dirección— y ahí no
+    hay nada que lo justifique; se quedaba como una mancha pálida flotando en
+    el hueco entre el texto y el logotipo.
   */
   @media (min-width: 901px) {
-    .ps-bloom, .ps-splash { display: none; }
+    .ps-bloom, .ps-splash + .ps-splash { display: none; }
+    .paint-splatter { --ps-k: .5; }
   }
 
   /* Nada de esto tiene sentido si se ha pedido menos movimiento. */

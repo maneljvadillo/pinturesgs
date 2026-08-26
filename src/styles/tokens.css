@@ -85,11 +85,18 @@
     contenido (Hero)—, así que vive aquí y no repetido en cada una.
 
     En MÓVIL el logotipo se lanza contra la pantalla y llega enseguida.
-    En ESCRITORIO entra rodando desde el otro lado y tarda más en cruzar, así
-    que la pintura no puede saltar antes de que llegue: el valor se retrasa en
-    la consulta de abajo. Es el único número que hay que mover.
+    En ESCRITORIO sale de detrás del titular y cruza rodando media pantalla,
+    así que la pintura no puede saltar antes de que llegue: el valor se retrasa
+    en la consulta de abajo. Es el único número que hay que mover.
   */
   --hero-impact: 260ms;
+
+  /*
+    Lo que dura la ENTRADA COMPLETA del logotipo, desde que asoma hasta que se
+    queda quieto. No la usa sólo el CSS: `hero-reveal.ts` la lee para no ponerse
+    a repintar la capa blanca mientras el logotipo todavía está entrando.
+  */
+  --hero-intro: 1100ms;
 
   /* ── Curvas de animación ───────────────────────────────────────────── */
   --ease-out-soft: cubic-bezier(.2, .8, .2, 1);
@@ -97,9 +104,20 @@
   --ease-overshoot: cubic-bezier(.16, .84, .44, 1);
 }
 
-/* Escritorio: el logotipo entra rodando y la pintura salta cuando frena. */
+/*
+  Escritorio: el logotipo sale de detrás del titular, cruza rodando por detrás
+  de las letras y frena en su sitio. Son 3,4 s de recorrido —a propósito: es
+  una bola de pintura rodando, no un objeto que aparece— y la pintura no puede
+  saltar hasta que llega. 2670 ms es el instante EXACTO en que la bola pisa su
+  sitio por primera vez, antes de pasarse de largo y asentarse; sale de la
+  curva de frenada de `ltRoll` (ver HeroLogo.astro), así que si se toca el
+  recorrido hay que recalcularlo.
+*/
 @media (min-width: 901px) {
-  :root { --hero-impact: 620ms; }
+  :root {
+    --hero-intro: 3400ms;
+    --hero-impact: 2670ms;
+  }
 }
 
 @media (max-width: 768px) {

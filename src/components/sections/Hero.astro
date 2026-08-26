@@ -139,9 +139,17 @@ import BrushCursor from '~/components/BrushCursor.astro';
     */
     animation: colorDrift 8s ease-in-out 900ms infinite alternate backwards;
   }
+  /*
+    Sólo DESPLAZAMIENTO, sin `scale`. Un cambio de escala obliga al navegador a
+    volver a rasterizar la capa —1958x1224 px, veintiocho degradados radiales y
+    tres filtros encima— cada vez que la escala se mueve lo suficiente, y esto
+    no para nunca: era un goteo de trabajo pesado durante toda la visita, no
+    sólo en la entrada. Desplazando, la capa se pinta UNA vez y el compositor
+    la mueve en la GPU. El margen de `inset: -18%` cubre de sobra el recorrido.
+  */
   @keyframes colorDrift {
-    0%   { transform: translate3d(-5%, -3.5%, 0) scale(1.04); }
-    100% { transform: translate3d(5%, 3.5%, 0) scale(1.16); }
+    0%   { transform: translate3d(-5%, -3.5%, 0); }
+    100% { transform: translate3d(5%, 3.5%, 0); }
   }
   /*
     Trama diagonal muy sutil: da textura de pintura en vez de degradado liso.
@@ -174,6 +182,16 @@ import BrushCursor from '~/components/BrushCursor.astro';
   .hero-inner {
     position: relative;
     z-index: 2;
+    /*
+      `.wrap` lleva `margin: 0 auto`, y unos márgenes automáticos en el eje
+      transversal ANULAN el estirado de un contenedor flex en columna: sin
+      esto, la caja se encogía a su contenido (1073 px en una pantalla de
+      1440) y el hero quedaba cien píxeles más estrecho que el resto de la
+      página, con el titular sin alinear con el menú de arriba. Además el
+      ancho dependía del largo del texto, así que el recorrido del logotipo
+      cambiaba al tocar una frase.
+    */
+    width: 100%;
     display: grid;
     grid-template-columns: 1.1fr 1fr;
     align-items: center;
@@ -258,6 +276,35 @@ import BrushCursor from '~/components/BrushCursor.astro';
   */
   @media (min-width: 901px) {
     .hero-inner { animation: none; }
+
+    /*
+      EL LOGOTIPO PASA POR DETRÁS DE LAS LETRAS.
+
+      Los dos son celdas de la misma rejilla, así que sin `position` mandaba el
+      orden del HTML y el logotipo, que va después, se pintaba ENCIMA del
+      titular: al cruzar lo tapaba entero. Con estos dos z-index el texto va
+      delante y la bola se ve pasar por debajo.
+    */
+    .hero-copy { position: relative; z-index: 2; }
+    .hero-gs { position: relative; z-index: 1; }
+
+    /*
+      El halo que hace que las letras se sigan leyendo cuando pasa la bola por
+      debajo. Es el color del propio fondo, así que sobre el hero en reposo no
+      se ve: sólo aparece cuando hay algo de color detrás. Se pinta una vez y
+      no se anima, no cuesta nada.
+    */
+    .hero-message, .hero-sub, .hero-ctas {
+      text-shadow: 0 0 6px var(--gesso), 0 0 22px var(--gesso), 0 0 40px var(--gesso);
+    }
+
+    /*
+      La deriva del color espera a que el logotipo esté puesto. Esta capa es la
+      superficie más cara de la página y encima está tapada por la capa blanca:
+      hasta que alguien pasa la brocha no se ve un píxel de ella, así que
+      moviéndose durante la entrada sólo estorba.
+    */
+    .hero-color-layer { animation-delay: var(--hero-intro); }
   }
 
   @media (prefers-reduced-motion: reduce) {

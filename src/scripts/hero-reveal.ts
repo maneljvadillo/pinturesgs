@@ -23,6 +23,18 @@ const MAX_POINTS = 240;
 
 type Point = { x: number; y: number; t: number };
 
+/**
+ * Lo que dura la entrada del logotipo, leído de `--hero-intro` (tokens.css).
+ * Se lee del CSS y no se copia aquí para que el número viva en un solo sitio:
+ * la duración cambia entre móvil y escritorio con una media query.
+ */
+function introMs(): number {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--hero-intro');
+  const ms = parseFloat(raw);
+  if (!Number.isFinite(ms)) return 0;
+  return raw.trim().endsWith('ms') ? ms : ms * 1000;
+}
+
 export function initHeroReveal(): void {
   const canvas = document.getElementById('heroReveal') as HTMLCanvasElement | null;
   const hero = canvas?.closest('.hero') as HTMLElement | null;
@@ -188,7 +200,25 @@ export function initHeroReveal(): void {
   const wantsMotion = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (finePointer) {
-    hero.addEventListener('pointermove', (e) => addPoint(e.clientX, e.clientY), { passive: true });
+    /*
+      La brocha no empieza a pintar hasta que el logotipo ha terminado de
+      entrar.
+
+      Cada punto del trazo repinta el canvas ENTERO —el hero completo, a dos
+      píxeles por píxel de CSS— y en un ordenador el ratón se mueve desde el
+      primer segundo, así que ese repintado caía justo encima de la entrada del
+      logotipo. Es la razón principal de que en escritorio se viera a tirones y
+      en móvil no: en móvil no hay puntero que lo dispare.
+
+      La espera sale de `--hero-intro`, el mismo número que dura la entrada. Si
+      se pide menos movimiento no hay entrada que proteger y pinta desde ya.
+    */
+    const intro = wantsMotion ? introMs() : 0;
+    const listen = (): void => {
+      hero.addEventListener('pointermove', (e) => addPoint(e.clientX, e.clientY), { passive: true });
+    };
+    if (intro > 0) window.setTimeout(listen, intro);
+    else listen();
   } else if (wantsMotion) {
     // Primera pasada al poco de cargar, para que se vea la idea sin tocar nada.
     scheduleStroke(1400);
