@@ -116,6 +116,12 @@ const TOOLS = [
           -->
           <div class="region-layer" id="regionLayer"></div>
 
+          <!--
+            La brocha. Va FUERA de la capa de interacción —el ratón no debe
+            poder tocarla nunca— y por encima de todo lo demás del marco.
+          -->
+          <span class="brush-dot" id="brushDot" aria-hidden="true"></span>
+
           <div class="compare-handle" id="compareHandle" aria-hidden="true"></div>
 
           <button type="button" class="mark-btn" id="markBtn" aria-pressed="false">
@@ -570,6 +576,73 @@ const TOOLS = [
   }
   .paint-tool .region-layer.marking { cursor: crosshair; }
   .paint-tool .region-layer.painting { cursor: none; }
+
+  /*
+    ── QUE EL DEDO PINTE Y NO ARRASTRE LA PÁGINA ───────────────────────
+    `.stage-frame` deja pasar el desplazamiento vertical (`pan-y`), que es lo
+    que se quiere con el cubo: se toca para rellenar, y el resto del tiempo la
+    foto no debe secuestrar el dedo de quien sólo está bajando por la página.
+
+    Pero con la brocha, el rodillo o la goma el gesto ES arrastrar, y `pan-y`
+    se lo llevaba el navegador: en el móvil la página subía y bajaba en lugar
+    de pintar. Con una herramienta de trazo activa —o marcando una pared— el
+    marco se queda el gesto entero. Del navegador para arriba se cruzan los
+    valores de toda la cadena, así que este `none` manda sobre el `pan-y` del
+    padre.
+
+    Se sigue pudiendo bajar por la página desde cualquier punto FUERA de la
+    foto, y volviendo al cubo se recupera el desplazamiento también encima.
+  */
+  .paint-tool .region-layer.painting,
+  .paint-tool .region-layer.marking { touch-action: none; }
+
+  /*
+    ── LA BROCHA ───────────────────────────────────────────────────────
+    Con una herramienta de trazo activa el puntero del sistema se esconde
+    (`cursor: none`) y hasta ahora no lo sustituía NADA: no se veía dónde ni
+    de qué grosor se iba a pintar. Con el dedo era peor todavía, porque encima
+    lo tapa la propia mano.
+
+    Es un aro del color que se va a aplicar, del tamaño exacto del trazo, con
+    filete blanco por dentro y oscuro por fuera para que se vea igual sobre
+    una pared clara que sobre una oscura, y un punto en el centro que marca el
+    píxel exacto. `--bd-size` (el diámetro) y `--bd-color` los pone el script.
+
+    Sólo se mueve con `transform`, así que seguir al puntero no cuesta nada.
+  */
+  .paint-tool .brush-dot {
+    position: absolute;
+    top: 0; left: 0;
+    z-index: 6;
+    pointer-events: none;
+    width: var(--bd-size, 40px);
+    height: var(--bd-size, 40px);
+    margin: calc(var(--bd-size, 40px) / -2) 0 0 calc(var(--bd-size, 40px) / -2);
+    border-radius: 50%;
+    border: 2px solid var(--bd-color, #fff);
+    background: color-mix(in srgb, var(--bd-color, #fff) 26%, transparent);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+    opacity: 0;
+    transition: opacity .12s ease;
+    will-change: transform;
+  }
+  .paint-tool .brush-dot.show { opacity: 1; }
+  /* La goma no pinta de ningún color: aro discontinuo y sin relleno. */
+  .paint-tool .brush-dot.erase {
+    border-style: dashed;
+    border-color: #fff;
+    background: none;
+  }
+  .paint-tool .brush-dot::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 3px; height: 3px;
+    margin: -1.5px 0 0 -1.5px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+  }
 </style>
 
 <script>

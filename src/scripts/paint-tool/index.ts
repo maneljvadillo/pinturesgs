@@ -35,6 +35,26 @@ const TOOL_RADIUS: Record<Exclude<ToolName, 'rellenar'>, number> = {
   borrar: 42,
 };
 
+/**
+ * Radio mínimo del trazo EN PÍXELES DE PANTALLA.
+ *
+ * Los de arriba están en píxeles de la foto, que mide 1200 de ancho: la brocha
+ * es el 1,8% del ancho de la imagen, salga en la pantalla que salga. En un
+ * ordenador el marco mide unos 560 px y eso son 10 px de trazo, que con el
+ * ratón se controlan bien. En un móvil el marco mide 330 y el mismo trazo se
+ * queda en 6 px: más fino que la yema del dedo con el que se está pintando.
+ *
+ * Así que el radio real es el mayor de los dos: el de la foto, o el que hace
+ * falta para que en ESA pantalla el trazo tenga un grosor manejable. En
+ * escritorio no cambia nada; en el móvil el trazo engorda hasta poder pintarse
+ * con el dedo.
+ */
+const TOOL_MIN_SCREEN_RADIUS: Record<Exclude<ToolName, 'rellenar'>, number> = {
+  brocha: 10,
+  rodillo: 24,
+  borrar: 17,
+};
+
 /** Tope de zonas que puede añadir el usuario, para no disparar la memoria. */
 const MAX_USER_REGIONS = 4;
 
@@ -80,6 +100,7 @@ export async function initPaintTool(): Promise<void> {
   const redoBtn = document.getElementById('redoBtn') as HTMLButtonElement;
   const resetBtn = document.getElementById('resetBtn') as HTMLButtonElement;
   const customColor = document.getElementById('customColor') as HTMLInputElement;
+  const brushDot = document.getElementById('brushDot') as HTMLElement;
 
   const outCtx = ctx2d(canvas);
   const scratch = makeCanvas(W, H);
@@ -247,7 +268,7 @@ export async function initPaintTool(): Promise<void> {
   function strokeAt(r: Region, x: number, y: number, prev: { x: number; y: number } | null, tool: ToolName): void {
     if (tool === 'rellenar') return;
     const g = ctx2d(r.paint);
-    const radius = TOOL_RADIUS[tool as Exclude<ToolName, 'rellenar'>] * PAINT_SCALE;
+    const radius = strokeRadius(tool as Exclude<ToolName, 'rellenar'>) * PAINT_SCALE;
     g.globalCompositeOperation = tool === 'borrar' ? 'destination-out' : 'source-over';
     g.strokeStyle = '#fff';
     g.fillStyle = '#fff';
@@ -273,6 +294,7 @@ export async function initPaintTool(): Promise<void> {
     const r = selected();
     if (!r) { showToast('Primero selecciona una zona.'); return; }
     currentColor = hex;
+    syncBrush();
     document.querySelectorAll('.swatch-cell.active').forEach((c) => c.classList.remove('active'));
     cell?.classList.add('active');
 
@@ -330,6 +352,8 @@ export async function initPaintTool(): Promise<void> {
     markBtn.textContent = on ? '✕ Cancelar' : '➕ Marcar otra pared';
     photoHint.hidden = !on;
     regionLayer.classList.toggle('marking', on);
+    // Marcando manda la cruz del sistema: el aro de la brocha sólo despista.
+    if (on) hideBrush();
   }
   markBtn.addEventListener('click', () => setMarking(!marking));
 
@@ -351,10 +375,73 @@ export async function initPaintTool(): Promise<void> {
   }
 
   // ── Puntero sobre la foto ───────────────────────────────────────────────
-  const toPhoto = (e: PointerEvent) => {
+  /*
+    La posición y el tamaño del marco se cachean. `getBoundingClientRect()`
+    obliga al navegador a recalcular el layout, y llamarlo en cada
+    `pointermove` —hasta 120 veces por segundo mientras se pinta— es justo lo
+    que hace que el trazo salga a tirones. Se invalida al desplazar la página o
+    al cambiar de tamaño, que es cuando el marco se mueve de verdad.
+  */
+  let stage = { left: 0, top: 0, width: 0, height: 0 };
+  let stageDirty = true;
+
+  function measureStage(): void {
     const b = regionLayer.getBoundingClientRect();
-    return { x: ((e.clientX - b.left) / b.width) * W, y: ((e.clientY - b.top) / b.height) * H };
+    stage = { left: b.left, top: b.top, width: b.width, height: b.height };
+    stageDirty = false;
+  }
+  window.addEventListener('scroll', () => { stageDirty = true; }, { passive: true });
+  window.addEventListener('resize', () => { stageDirty = true; syncBrush(); });
+
+  const toPhoto = (e: PointerEvent) => {
+    if (stageDirty) measureStage();
+    return {
+      x: ((e.clientX - stage.left) / stage.width) * W,
+      y: ((e.clientY - stage.top) / stage.height) * H,
+    };
   };
+
+  /** Píxeles de la foto que caben en un píxel de pantalla. */
+  function photoPerPx(): number {
+    if (stageDirty) measureStage();
+    return stage.width > 0 ? W / stage.width : 1;
+  }
+
+  /** El radio con el que se pinta de verdad. Ver TOOL_MIN_SCREEN_RADIUS. */
+  function strokeRadius(tool: Exclude<ToolName, 'rellenar'>): number {
+    return Math.max(TOOL_RADIUS[tool], TOOL_MIN_SCREEN_RADIUS[tool] * photoPerPx());
+  }
+
+  // ── La brocha que se ve ─────────────────────────────────────────────────
+  /**
+   * Pone el aro del color y del tamaño de la herramienta activa. Se llama al
+   * cambiar de herramienta, de color o de tamaño de ventana: nunca por
+   * fotograma. Moverlo (`moveBrush`) sí es por fotograma, y sólo toca
+   * `transform`.
+   */
+  function syncBrush(): void {
+    if (currentTool === 'rellenar') { hideBrush(); return; }
+    const tool = currentTool as Exclude<ToolName, 'rellenar'>;
+    const sizePx = (strokeRadius(tool) * 2) / photoPerPx();
+    brushDot.style.setProperty('--bd-size', `${sizePx.toFixed(1)}px`);
+    brushDot.style.setProperty('--bd-color', currentColor || '#FFFFFF');
+    brushDot.classList.toggle('erase', tool === 'borrar');
+  }
+
+  function moveBrush(e: PointerEvent): void {
+    if (stageDirty) measureStage();
+    const x = e.clientX - stage.left;
+    const y = e.clientY - stage.top;
+    brushDot.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+  }
+
+  function showBrush(e: PointerEvent): void {
+    if (currentTool === 'rellenar' || marking) return;
+    moveBrush(e);
+    brushDot.classList.add('show');
+  }
+
+  function hideBrush(): void { brushDot.classList.remove('show'); }
 
   let drawStart: { x: number; y: number } | null = null;
   let preview: HTMLElement | null = null;
@@ -363,6 +450,10 @@ export async function initPaintTool(): Promise<void> {
   let strokeRegion: Region | null = null;
 
   regionLayer.addEventListener('pointerdown', (e) => {
+    // Al empezar un gesto la medida tiene que estar fresca sí o sí: es la que
+    // se usará durante todo el trazo.
+    measureStage();
+    showBrush(e);
     const p = toPhoto(e);
     // Capturar el puntero mantiene el trazo vivo aunque el cursor se salga del
     // marco. Algunos navegadores lanzan si el pointerId ya no está activo, y
@@ -408,6 +499,7 @@ export async function initPaintTool(): Promise<void> {
   });
 
   regionLayer.addEventListener('pointermove', (e) => {
+    showBrush(e);
     const p = toPhoto(e);
 
     if (marking && drawStart && preview) {
@@ -458,6 +550,15 @@ export async function initPaintTool(): Promise<void> {
   regionLayer.addEventListener('pointerup', endPointer);
   regionLayer.addEventListener('pointercancel', endPointer);
 
+  /*
+    El ratón se lleva la brocha al salir del marco. El dedo se la lleva al
+    levantarse: mientras se pinta la mano tapa el aro, pero al soltar no puede
+    quedarse ahí clavado un aro que ya no sigue a nadie.
+  */
+  regionLayer.addEventListener('pointerleave', hideBrush);
+  regionLayer.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') hideBrush(); });
+  regionLayer.addEventListener('pointercancel', hideBrush);
+
   // ── Herramientas ────────────────────────────────────────────────────────
   document.querySelectorAll<HTMLButtonElement>('.tool-btn[data-tool]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -467,6 +568,7 @@ export async function initPaintTool(): Promise<void> {
         b.setAttribute('aria-checked', String(b === btn));
       });
       regionLayer.classList.toggle('painting', currentTool !== 'rellenar');
+      syncBrush();
     });
   });
 
@@ -510,6 +612,7 @@ export async function initPaintTool(): Promise<void> {
     });
     const iSel = zonas.findIndex((r) => r.id === selectedId);
     currentColor = colors[ZONES[iSel]?.combo ?? 0] ?? currentColor;
+    syncBrush();
     document.querySelectorAll('.combo-btn.active').forEach((b) => b.classList.remove('active'));
     document.querySelectorAll('.swatch-cell.active').forEach((c) => c.classList.remove('active'));
     btn.classList.add('active');
