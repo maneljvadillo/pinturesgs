@@ -7,10 +7,10 @@
  * planta, mesa, suelo o techo. Sin esto el color se aplicaría en un rectángulo
  * plano que pintaría por encima de los muebles.
  *
- * SALIDA: public/room/sala-paredes.png — un solo PNG en color donde cada canal
- * es una pared:
- *
- *   R → pared izquierda      G → pared del fondo      B → tabique derecho
+ * SALIDA:
+ *   public/room/sala-paredes.png — un PNG en color, una pared por canal:
+ *       R → pared izquierda    G → pared del fondo    B → tabique derecho
+ *   public/room/sala-techo.png  — el techo, en escala de grises (ver CEILING).
  *
  * Un archivo en vez de tres: una sola descarga, y las tres máscaras llegan
  * siempre sincronizadas con la foto. Va a public/ y NO a src/assets porque
@@ -43,6 +43,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src/assets/photos/sala-tres-paredes.jpg');
 const OUT_DIR = path.join(ROOT, 'public/room');
 const DEBUG = process.argv.includes('--debug');
+/**
+ * `--audit` pinta en AMARILLO lo que cae dentro del polígono de una pared, no
+ * es un mueble declarado y aun así se ha quedado fuera de la máscara. Es decir:
+ * los huecos que la clave de color no ha cogido. Es la vista que hay que mirar
+ * cuando "hay trozos que no se pintan".
+ */
+const AUDIT = process.argv.includes('--audit');
 
 // ── 1. Geometría, en fracciones del encuadre ───────────────────────────────
 // Medidas (sobre el encuadre normalizado a 1000 px de ancho):
@@ -65,7 +72,10 @@ const WALLS = [
     channel: 0,
     id: 'izquierda',
     // Sube hasta el techo por la izquierda y baja al rodapié: es un trapecio.
-    poly: [[0.000, 0.030], [0.283, 0.172], [0.283, 0.724], [0.000, 0.812]],
+    // Cantos medidos: techo de y=0.023 (x=0) a y=0.168 (x=0.284); rodapié de
+    // y=0.824 a y=0.730. El polígono va 2 px por dentro, no 8 como antes:
+    // aquello dejaba una franja sin pintar arriba y otra abajo.
+    poly: [[0.000, 0.026], [0.283, 0.170], [0.283, 0.727], [0.000, 0.819]],
     // La franja del borde izquierdo está quemada por la luz de la ventana
     // (L≈0.98) y ahí el color se dispara a S≈0.41 sin dejar de ser pared: por
     // eso `blown`, que acepta cualquier píxel casi blanco.
@@ -74,8 +84,9 @@ const WALLS = [
   {
     channel: 1,
     id: 'fondo',
-    poly: [[0.286, 0.174], [0.686, 0.179], [0.686, 0.743], [0.286, 0.743]],
-    // Aquí conviven la pared clara (L≈0.85), el sofá (L≈0.42) y la planta
+    // Techo medido en y=0.167 (izq) → 0.174 (der); rodapié en y=0.747.
+    poly: [[0.286, 0.169], [0.686, 0.176], [0.686, 0.745], [0.286, 0.745]],
+    // Aquí conviven la pared clara (L≈0.85), el sofá (L≈0.44) y la planta
     // (S≈0.67): el umbral de luminancia es el que separa el sofá.
     key: { minL: 0.46, maxL: 1.00, maxS: 0.30, blown: 0.95 },
   },
@@ -83,7 +94,7 @@ const WALLS = [
     channel: 2,
     id: 'tabique',
     // Llega al borde superior del encuadre: no se ve dónde acaba.
-    poly: [[0.689, 0.000], [1.000, 0.000], [1.000, 0.899], [0.689, 0.899]],
+    poly: [[0.689, 0.000], [1.000, 0.000], [1.000, 0.902], [0.689, 0.902]],
     // Degradado de luz muy marcado: de L≈0.75 pegado al canto a L≈0.46 en la
     // esquina de arriba a la derecha. Dentro de este polígono no hay muebles.
     key: { minL: 0.32, maxL: 1.00, maxS: 0.30, blown: 0.95 },
@@ -91,17 +102,55 @@ const WALLS = [
 ];
 
 /**
- * Objetos que tapan pared y que la clave de color no separa por sí sola.
- * El sofá se va por luminancia, pero sus cojines cogen un brillo que roza el
- * umbral; la mesa de roble tiene el tablero tan claro como la pared.
+ * EL TECHO va en un archivo aparte, no en un cuarto canal.
  *
- * El sofá va como polígono y no como rectángulo: su brazo izquierdo avanza
- * hacia el centro según baja (x≈0.504 arriba, x≈0.458 abajo) y un rectángulo
- * que lo cubriese entero se comía una franja de pared por encima.
+ * El canal alfa no sirve: al dibujar un PNG con alfa en un lienzo, los píxeles
+ * transparentes pierden su RGB, y eso destrozaría las máscaras de las tres
+ * paredes en todo el encuadre menos el techo. Un segundo PNG en escala de
+ * grises son 5 kB y no tiene ese problema.
+ *
+ * Su borde inferior son las mismas líneas de techo que rematan las paredes,
+ * 2 px por encima; a la derecha lo corta el tabique, que llega hasta arriba.
+ */
+const CEILING = {
+  id: 'techo',
+  poly: [[0.000, 0.000], [0.685, 0.000], [0.685, 0.173], [0.284, 0.166], [0.000, 0.021]],
+  // Plano beige y uniforme, sin nada delante: el umbral puede ser ancho.
+  key: { minL: 0.40, maxL: 1.00, maxS: 0.35, blown: 0.95 },
+};
+
+/**
+ * Lo que se interpone entre la cámara y la pared.
+ *
+ * Hay dos maneras de quitarlo, y la diferencia importa:
+ *
+ *   · con `key`  → dentro de esa zona se aplica un umbral MÁS ESTRICTO en vez
+ *                  de descartarla entera. La silueta la recorta la propia luz,
+ *                  así que sale pegada al objeto. Es lo que hace el sofá: su
+ *                  cuerpo no pasa de L=0.60 y la pared por encima no baja de
+ *                  L=0.79, así que un mínimo de 0.70 los separa limpiamente.
+ *                  Antes iba con un rectángulo y se comía una franja de pared
+ *                  por encima y por la izquierda del brazo.
+ *   · sin `key`  → recorte duro por geometría. Sólo para lo que la luz NO
+ *                  separa: el tablero de la mesa es de roble claro y marca
+ *                  L=0.82, más brillante que la propia pared que tiene detrás
+ *                  (L=0.74). Ahí no hay umbral que valga y toca polígono.
  */
 const OCCLUDERS = [
-  { name: 'sofa', poly: [[0.497, 0.594], [0.690, 0.594], [0.690, 0.830], [0.448, 0.830], [0.448, 0.660]] },
-  { name: 'mesa', poly: [[0.398, 0.650], [0.505, 0.650], [0.505, 0.800], [0.398, 0.800]] },
+  {
+    name: 'sofa',
+    poly: [[0.440, 0.585], [0.700, 0.585], [0.700, 0.870], [0.440, 0.870]],
+    key: { minL: 0.70, maxL: 1.00, maxS: 0.30, blown: 0.95 },
+  },
+  {
+    name: 'mesa',
+    // Tablero, taza y patas. Medido: tablero de y=0.652 a y=0.75, patas hasta
+    // y≈0.79, canto izquierdo en x=0.417 y taza asomando desde y=0.630.
+    poly: [
+      [0.437, 0.628], [0.481, 0.628], [0.481, 0.650], [0.509, 0.650],
+      [0.509, 0.800], [0.406, 0.800], [0.406, 0.669], [0.437, 0.651],
+    ],
+  },
 ];
 
 // ── Implementación ─────────────────────────────────────────────────────────
@@ -134,17 +183,19 @@ function isWallColour(i, key) {
   return l >= key.minL && l <= key.maxL && s <= key.maxS;
 }
 
-const channels = [];
-for (const wall of WALLS) {
+/** Construye la máscara de UN plano: geometría ∩ clave de color, limpiada. */
+async function buildMask(zona) {
   const geom = Buffer.alloc(N, 0);
   const raw = Buffer.alloc(N, 0);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      if (!inPoly(wall.poly, x + 0.5, y + 0.5)) continue;
-      if (OCCLUDERS.some((o) => inPoly(o.poly, x + 0.5, y + 0.5))) continue;
+      if (!inPoly(zona.poly, x + 0.5, y + 0.5)) continue;
+      const dentro = OCCLUDERS.find((o) => inPoly(o.poly, x + 0.5, y + 0.5));
+      // Sin umbral propio, el mueble se descarta por geometría y punto.
+      if (dentro && !dentro.key) continue;
       const i = y * W + x;
       geom[i] = 255;
-      if (isWallColour(i, wall.key)) raw[i] = 255;
+      if (isWallColour(i, dentro ? dentro.key : zona.key)) raw[i] = 255;
     }
   }
 
@@ -172,10 +223,29 @@ for (const wall of WALLS) {
     .raw()
     .toBuffer();
 
-  let sum = 0;
-  for (let i = 0; i < N; i++) sum += cleaned[i];
-  channels[wall.channel] = { id: wall.id, buf: cleaned, coverage: (sum / N / 255) * 100 };
+  let sum = 0, geomSum = 0, holes = 0;
+  const hole = Buffer.alloc(N, 0);
+  for (let i = 0; i < N; i++) {
+    sum += cleaned[i];
+    if (geom[i]) {
+      geomSum++;
+      // Dentro del plano de pared y sin mueble delante, pero sin máscara.
+      if (cleaned[i] < 40) { hole[i] = 255; holes++; }
+    }
+  }
+  return {
+    id: zona.id,
+    buf: cleaned,
+    hole,
+    coverage: (sum / N / 255) * 100,
+    // Qué porcentaje del plano se queda SIN pintar.
+    missed: geomSum ? (holes / geomSum) * 100 : 0,
+  };
 }
+
+const channels = [];
+for (const wall of WALLS) channels[wall.channel] = await buildMask(wall);
+const ceiling = await buildMask(CEILING);
 
 // Un PNG con las tres máscaras, una por canal.
 const rgb = Buffer.alloc(N * 3);
@@ -190,17 +260,56 @@ const png = await sharp(rgb, { raw: { width: W, height: H, channels: 3 } })
   .toBuffer();
 await fs.writeFile(path.join(OUT_DIR, 'sala-paredes.png'), png);
 
+// El techo, en escala de grises y aparte (ver el comentario de CEILING).
+const pngTecho = await sharp(ceiling.buf, { raw: { width: W, height: H, channels: 1 } })
+  .toColourspace('b-w')
+  .png({ compressionLevel: 9, palette: false })
+  .toBuffer();
+await fs.writeFile(path.join(OUT_DIR, 'sala-techo.png'), pngTecho);
+
 console.log(`✓ sala-paredes.png  ${W}×${H}  ${(png.length / 1024).toFixed(0)} kB`);
-for (const ch of channels) console.log(`   ${ch.id.padEnd(11)} ${ch.coverage.toFixed(1)}% del encuadre`);
+console.log(`✓ sala-techo.png    ${W}×${H}  ${(pngTecho.length / 1024).toFixed(0)} kB`);
+for (const ch of [...channels, ceiling]) {
+  console.log(
+    `   ${ch.id.padEnd(11)} ${ch.coverage.toFixed(1)}% del encuadre` +
+    `  ·  sin pintar dentro del plano: ${ch.missed.toFixed(2)}%`,
+  );
+}
+
+// ── Vista de auditoría: dónde NO llega la máscara ──────────────────────────
+if (AUDIT) {
+  const rgba = Buffer.alloc(N * 4);
+  for (let i = 0; i < N; i++) {
+    const enHueco = [...channels, ceiling].some((c) => c.hole[i]);
+    if (enHueco) {
+      rgba[i * 4] = 255; rgba[i * 4 + 1] = 235; rgba[i * 4 + 2] = 0;
+      rgba[i * 4 + 3] = 235;
+    } else {
+      // Lo que sí entra en máscara se atenúa, para que el amarillo cante.
+      const v = Math.max(channels[0].buf[i], channels[1].buf[i], channels[2].buf[i], ceiling.buf[i]);
+      rgba[i * 4] = 0; rgba[i * 4 + 1] = 0; rgba[i * 4 + 2] = 0;
+      rgba[i * 4 + 3] = Math.round(v * 0.45);
+    }
+  }
+  const preview = await sharp(SRC)
+    .composite([{ input: rgba, raw: { width: W, height: H, channels: 4 }, blend: 'over' }])
+    .jpeg({ quality: 90 })
+    .toBuffer();
+  await fs.mkdir(OUT_DIR, { recursive: true });
+  const out = path.join(OUT_DIR, '_audit-paredes.jpg');
+  await fs.writeFile(out, preview);
+  console.log(`  auditoría → ${path.relative(ROOT, out)}  (amarillo = pared sin máscara)`);
+}
 
 // ── Vista de comprobación ──────────────────────────────────────────────────
 if (DEBUG) {
-  const TINT = [[255, 47, 176], [0, 210, 106], [41, 121, 255]];
+  const TINT = [[255, 47, 176], [0, 210, 106], [41, 121, 255], [255, 200, 0]];
   const rgba = Buffer.alloc(N * 4);
   for (let i = 0; i < N; i++) {
     let r = 0, g = 0, b = 0, a = 0;
-    for (let c = 0; c < 3; c++) {
-      const v = channels[c].buf[i];
+    const capas = [...channels, ceiling];
+    for (let c = 0; c < capas.length; c++) {
+      const v = capas[c].buf[i];
       if (v > a) { a = v; [r, g, b] = TINT[c]; }
     }
     rgba[i * 4] = r; rgba[i * 4 + 1] = g; rgba[i * 4 + 2] = b;

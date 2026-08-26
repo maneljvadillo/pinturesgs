@@ -85,7 +85,7 @@ Dos utilidades que sólo hay que lanzar si cambia la sala de la herramienta o
 el logotipo:
 
 ```bash
-node scripts/build-wall-masks.mjs --debug  # máscaras de las tres paredes
+node scripts/build-wall-masks.mjs --debug  # máscaras de las 3 paredes y el techo
 node scripts/build-social-images.mjs       # og.png y apple-touch-icon.png
 ```
 

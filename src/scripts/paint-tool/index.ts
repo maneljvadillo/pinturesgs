@@ -39,14 +39,23 @@ const TOOL_RADIUS: Record<Exclude<ToolName, 'rellenar'>, number> = {
 const MAX_USER_REGIONS = 4;
 
 /**
- * Las tres paredes de la sala, cada una en un canal de la máscara
- * (ver scripts/build-wall-masks.mjs). El orden manda en el selector de zonas.
+ * Las cuatro zonas pintables de la sala (ver scripts/build-wall-masks.mjs).
+ * El orden manda en el selector de zonas.
+ *
+ * Las tres paredes viajan en un PNG en color, una por canal. El techo va en un
+ * archivo aparte: no cabe en un cuarto canal porque el alfa se lleva por
+ * delante el RGB de los otros tres al dibujar el PNG en un lienzo.
+ *
+ * `combo` dice qué color de una combinación le toca a cada zona. El tercero es
+ * siempre el tono claro, y lo comparten tabique y techo: son los dos planos de
+ * cierre, y en obra se pintan juntos precisamente por eso.
  */
-const WALLS = [
-  { id: 'w-izq', label: 'Pared izquierda', channel: 0 as const },
-  { id: 'w-fondo', label: 'Pared del fondo', channel: 1 as const },
-  { id: 'w-tabique', label: 'Tabique derecho', channel: 2 as const },
-];
+const ZONES = [
+  { id: 'z-izq', label: 'Pared izquierda', mask: 'walls', channel: 0 as const, combo: 0 },
+  { id: 'z-fondo', label: 'Pared del fondo', mask: 'walls', channel: 1 as const, combo: 1 },
+  { id: 'z-tabique', label: 'Tabique derecho', mask: 'walls', channel: 2 as const, combo: 2 },
+  { id: 'z-techo', label: 'Techo', mask: 'ceiling', channel: 0 as const, combo: 2 },
+] as const;
 
 export async function initPaintTool(): Promise<void> {
   const section = document.getElementById('pinta');
@@ -54,6 +63,7 @@ export async function initPaintTool(): Promise<void> {
 
   const photoUrl = section.dataset.photo!;
   const maskUrl = section.dataset.mask!;
+  const ceilingUrl = section.dataset.maskCeiling!;
   const W = Number(section.dataset.w);
   const H = Number(section.dataset.h);
 
@@ -77,13 +87,15 @@ export async function initPaintTool(): Promise<void> {
 
   // ── Carga ───────────────────────────────────────────────────────────────
   let photo: HTMLImageElement;
-  let wallShapes: HTMLCanvasElement[];
+  let zoneShapes: HTMLCanvasElement[];
   let luma: LumaMap;
   try {
-    const [p, m] = await Promise.all([loadImage(photoUrl), loadImage(maskUrl)]);
+    const [p, m, c] = await Promise.all([
+      loadImage(photoUrl), loadImage(maskUrl), loadImage(ceilingUrl),
+    ]);
     photo = p;
     luma = buildLumaMap(p, W, H);
-    wallShapes = WALLS.map((wall) => maskToAlpha(m, W, H, wall.channel));
+    zoneShapes = ZONES.map((z) => maskToAlpha(z.mask === 'walls' ? m : c, W, H, z.channel));
   } catch {
     loading.textContent = 'No se ha podido cargar la herramienta.';
     return;
@@ -106,14 +118,14 @@ export async function initPaintTool(): Promise<void> {
   function makePaintCanvas(): HTMLCanvasElement { return makeCanvas(paintW, paintH); }
 
   function seed(): void {
-    regions = WALLS.map((wall, i) => {
-      const r = makeRegion(wall.id, wall.label, 'pared', wallShapes[i]!, luma);
+    regions = ZONES.map((z, i) => {
+      const r = makeRegion(z.id, z.label, 'pared', zoneShapes[i]!, luma);
       r.paint = makePaintCanvas();
       return r;
     });
     // Arranca seleccionada la del fondo: es la más grande y la que primero
     // mira todo el mundo.
-    selectedId = 'w-fondo';
+    selectedId = 'z-fondo';
     nextId = 1;
     rebuildIdMap();
   }
@@ -477,15 +489,18 @@ export async function initPaintTool(): Promise<void> {
     debe devolverle la sala anterior entera, no dejarle dos paredes a medias.
   */
   function applyCombo(colors: string[], btn: HTMLElement): void {
-    const walls = regions.filter((r) => r.kind === 'pared');
-    walls.forEach((r, i) => {
-      const hex = colors[i];
+    const zonas = regions.filter((r) => r.kind === 'pared');
+    zonas.forEach((r, i) => {
+      // Cada zona toma el color que le asigna ZONES: tabique y techo comparten
+      // el tercero, el claro.
+      const hex = colors[ZONES[i]?.combo ?? i];
       if (!hex) return;
       cloneForWrite(r);
       r.color = hex;
       fillRegion(r);
     });
-    currentColor = colors[walls.findIndex((r) => r.id === selectedId)] ?? currentColor;
+    const iSel = zonas.findIndex((r) => r.id === selectedId);
+    currentColor = colors[ZONES[iSel]?.combo ?? 0] ?? currentColor;
     document.querySelectorAll('.combo-btn.active').forEach((b) => b.classList.remove('active'));
     document.querySelectorAll('.swatch-cell.active').forEach((c) => c.classList.remove('active'));
     btn.classList.add('active');

@@ -67,9 +67,12 @@ Tamaño recomendado: 1400 px de ancho como mínimo. Astro genera el resto.
 
 `sala-tres-paredes.jpg` es especial: no es una foto de banco ni una obra real,
 sino una sala hecha a medida para la herramienta, con tres planos de pared
-limpios y muebles bajos que casi no tapan. Lleva asociadas TRES máscaras —una
-por pared— que viajan juntas en `public/room/sala-paredes.png`, una por canal
-de color (R = izquierda, G = fondo, B = tabique).
+limpios y muebles bajos que casi no tapan. Lleva asociadas CUATRO máscaras:
+las tres paredes viajan juntas en `public/room/sala-paredes.png`, una por canal
+de color (R = izquierda, G = fondo, B = tabique), y el techo va aparte en
+`public/room/sala-techo.png`, en escala de grises — el canal alfa no sirve como
+cuarto canal porque al dibujar el PNG en un lienzo se lleva por delante el RGB
+de los otros tres.
 
 Si se cambia la foto hay que **recalibrar** las máscaras:
 
@@ -78,10 +81,16 @@ node scripts/build-wall-masks.mjs --debug
 ```
 
 y ajustar las constantes del principio de ese archivo —los polígonos de cada
-pared, los muebles que la tapan y los umbrales de color, que van por pared
-porque la luz cae mucho de izquierda a derecha— mirando
-`public/room/_debug-paredes.jpg`, que pinta cada pared de un color. El propio
-script explica el método y de dónde sale cada medida.
+zona, los muebles que la tapan y los umbrales de color, que van por zona porque
+la luz cae mucho de izquierda a derecha— mirando `public/room/_debug-paredes.jpg`,
+que pinta cada zona de un color. El propio script explica el método y de dónde
+sale cada medida.
+
+Con `--audit` genera además `public/room/_audit-paredes.jpg`, que pinta de
+**amarillo lo que está dentro del plano y se ha quedado sin máscara**: es la
+vista a mirar cuando "hay trozos que no se pintan". Ojo al leerla: los muebles
+que se recortan por umbral (el sofá) salen amarillos y eso es correcto, no un
+fallo — lo que hay que buscar son manchas amarillas sobre pared lisa.
 
 La foto vieja del salón de ladrillo (`salon.jpg` + `salon-mask.png` +
 `scripts/build-wall-mask.mjs`, en singular) sigue en el repositorio por si se

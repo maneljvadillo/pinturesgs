@@ -2,11 +2,12 @@
 /**
  * "PINTA EL TEU ESPAI" — dos tarjetas: Antes/Después y Paleta.
  *
- * La sala llega con SUS TRES PAREDES ya marcadas —izquierda, fondo y tabique—,
+ * La sala llega con CUATRO ZONAS ya marcadas —pared izquierda, del fondo,
+ * tabique derecho y techo—,
  * cada una con su máscara real generada en build (scripts/build-wall-masks.mjs)
- * y su propio sombreado. Con tres planos se puede ensayar una combinación
- * entera, que es lo que de verdad se decide al pintar una casa: no un color
- * suelto, sino cómo quedan juntos.
+ * cada una con su máscara real y su propio sombreado. Con cuatro planos se
+ * puede ensayar una combinación entera, que es lo que de verdad se decide al
+ * pintar una casa: no un color suelto, sino cómo quedan juntos.
  *
  * Si el usuario quiere pintar algo más (un techo, un hueco), lo señala él
  * arrastrando un rectángulo: NO hay detección automática de zonas nuevas, eso
@@ -38,6 +39,7 @@ const TOOLS = [
   id="pinta"
   data-photo={salaImg.src}
   data-mask="/room/sala-paredes.png"
+  data-mask-ceiling="/room/sala-techo.png"
   data-w={sala.width}
   data-h={sala.height}
 >
@@ -46,7 +48,7 @@ const TOOLS = [
       <span class="eyebrow">Herramienta interactiva</span>
       <h2>Pinta el teu espai</h2>
       <p>
-        Tres paredes de verdad, cada una con su luz y sus sombras. Pinta cada una de un
+        Tres paredes y el techo, cada uno con su luz y sus sombras. Pinta cada zona de un
         color, prueba una combinación entera y mira cómo queda antes de decidir nada.
       </p>
     </div>
@@ -81,9 +83,9 @@ const TOOLS = [
       <div class="pt-card">
         <h3>Antes / Después</h3>
         <p class="pt-card-sub">
-          Las tres paredes están detectadas: elige una arriba (o haz clic sobre ella) y
-          dale color con la paleta. ¿Quieres pintar alguna zona más? Márcala con
-          “➕ Marcar otra pared”. Arrastra el control para comparar con el antes.
+          Las tres paredes y el techo están detectados: elige una zona arriba (o haz clic
+          sobre ella) y dale color con la paleta. ¿Quieres pintar alguna zona más? Márcala
+          con “➕ Marcar otra pared”. Arrastra el control para comparar con el antes.
         </p>
 
         <div class="stage-frame" id="stage">
@@ -133,7 +135,7 @@ const TOOLS = [
       <div class="pt-card">
         <h3>Paleta</h3>
 
-        <p class="pt-card-sub">Diez combinaciones probadas — pintan las tres zonas de una vez:</p>
+        <p class="pt-card-sub">Diez combinaciones probadas — visten las cuatro zonas de una vez:</p>
         <div class="combo-row">
           {COMBOS.map((c) => (
             <button
