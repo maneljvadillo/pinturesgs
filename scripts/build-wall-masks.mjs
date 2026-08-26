@@ -79,7 +79,7 @@ const WALLS = [
     // La franja del borde izquierdo está quemada por la luz de la ventana
     // (L≈0.98) y ahí el color se dispara a S≈0.41 sin dejar de ser pared: por
     // eso `blown`, que acepta cualquier píxel casi blanco.
-    key: { minL: 0.50, maxL: 1.00, maxS: 0.45, blown: 0.92 },
+    key: { minL: 0.50, maxL: 1.00, maxS: 0.45, blown: 0.92, maxWarm: 34 },
   },
   {
     channel: 1,
@@ -88,7 +88,7 @@ const WALLS = [
     poly: [[0.286, 0.169], [0.686, 0.176], [0.686, 0.745], [0.286, 0.745]],
     // Aquí conviven la pared clara (L≈0.85), el sofá (L≈0.44) y la planta
     // (S≈0.67): el umbral de luminancia es el que separa el sofá.
-    key: { minL: 0.46, maxL: 1.00, maxS: 0.30, blown: 0.95 },
+    key: { minL: 0.46, maxL: 1.00, maxS: 0.30, blown: 0.95, maxWarm: 30 },
   },
   {
     channel: 2,
@@ -143,12 +143,18 @@ const OCCLUDERS = [
     key: { minL: 0.70, maxL: 1.00, maxS: 0.30, blown: 0.95 },
   },
   {
-    name: 'mesa',
-    // Tablero, taza y patas. Medido: tablero de y=0.652 a y=0.75, patas hasta
-    // y≈0.79, canto izquierdo en x=0.417 y taza asomando desde y=0.630.
+    /*
+      Sólo el TABLERO y la TAZA, que son lo único que la luz no separa: el
+      tablero tiene brillos neutros (r-b≈-7) tan claros como la pared, y la
+      taza es blanca y lisa. Las patas ya no entran aquí — las corta el eje
+      cálido— y por eso vuelve a pintarse la pared que se veía entre ellas y a
+      la izquierda de la mesa, que antes se comía este mismo polígono.
+    */
+    name: 'mesa (tablero y taza)',
     poly: [
-      [0.437, 0.628], [0.481, 0.628], [0.481, 0.650], [0.509, 0.650],
-      [0.509, 0.800], [0.406, 0.800], [0.406, 0.669], [0.437, 0.651],
+      [0.443, 0.626], [0.472, 0.626], [0.472, 0.647], [0.500, 0.651],
+      [0.506, 0.668], [0.503, 0.691], [0.416, 0.691], [0.414, 0.678],
+      [0.441, 0.653], [0.443, 0.647],
     ],
   },
 ];
@@ -171,15 +177,26 @@ function inPoly(poly, x, y) {
   return inside;
 }
 
-/** Clave de color: ¿este píxel puede ser pared, con el umbral de SU pared? */
+/**
+ * Clave de color: ¿este píxel puede ser pared, con el umbral de SU zona?
+ *
+ * Además de luminancia y saturación hay un tercer eje, `maxWarm`: la diferencia
+ * roja-azul. Es lo que separa la madera de la pared cuando la luminancia no
+ * puede. Las patas de la mesa marcan r-b≈43 y el rodapié 43, mientras que la
+ * pared no pasa de 19 ni en su punto más cálido. La saturación HSL no servía
+ * aquí: la madera clara se queda en S≈0.12, prácticamente lo mismo que la
+ * pared con el rebote cálido del suelo.
+ */
 function isWallColour(i, key) {
   const j = i * C;
-  const r = data[j] / 255, g = data[j + 1] / 255, b = data[j + 2] / 255;
+  const R = data[j], B = data[j + 2];
+  const r = R / 255, g = data[j + 1] / 255, b = B / 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
   const l = (mx + mn) / 2, d = mx - mn;
   const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
   // Un píxel quemado ha perdido el color: su saturación no dice nada.
   if (l >= key.blown) return true;
+  if (key.maxWarm !== undefined && R - B > key.maxWarm) return false;
   return l >= key.minL && l <= key.maxL && s <= key.maxS;
 }
 

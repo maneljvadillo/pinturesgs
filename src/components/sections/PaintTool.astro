@@ -26,6 +26,13 @@ const photoMeta = PHOTO_BY_KEY['sala-tres-paredes']!;
 // La misma URL para el <img> del "antes" y para el lienzo: un solo descargue.
 const salaImg = await getImage({ src: sala, width: sala.width, format: 'webp', quality: 88 });
 
+/**
+ * Cuántas combinaciones se ven sin desplegar. Con las diez a la vista la
+ * tarjeta de la paleta quedaba cargadísima y tapaba lo importante, que son los
+ * colores; el resto se despliega con un botón.
+ */
+const VISIBLE_COMBOS = 4;
+
 const TOOLS = [
   { id: 'rellenar', emoji: '🪣', label: 'Rellenar', hint: 'Pinta la zona entera de una vez' },
   { id: 'brocha',   emoji: '🖌️', label: 'Brocha',   hint: 'Traza fino, para retocar' },
@@ -136,11 +143,11 @@ const TOOLS = [
         <h3>Paleta</h3>
 
         <p class="pt-card-sub">Diez combinaciones probadas — visten las cuatro zonas de una vez:</p>
-        <div class="combo-row">
-          {COMBOS.map((c) => (
+        <div class="combo-row" id="comboRow">
+          {COMBOS.map((c, i) => (
             <button
               type="button"
-              class="combo-btn"
+              class:list={['combo-btn', { extra: i >= VISIBLE_COMBOS }]}
               data-combo={c.colors.join(',')}
               data-name={c.name}
               title={`${c.name} — ${c.mood}`}
@@ -156,8 +163,11 @@ const TOOLS = [
             </button>
           ))}
         </div>
+        <button type="button" class="combo-more" id="comboMore" aria-expanded="false" aria-controls="comboRow">
+          +{COMBOS.length - VISIBLE_COMBOS} combinaciones más
+        </button>
 
-        <p class="pt-card-sub">O pared a pared. Zona seleccionada:</p>
+        <p class="pt-card-sub">O zona a zona. Zona seleccionada:</p>
         <div class="wall-picker" id="wallPicker"></div>
 
         <div class="palette-scroll">
@@ -176,6 +186,7 @@ const TOOLS = [
                   >
                     <span class="swatch-sq" style={`background:${c.hex}`}></span>
                     <span class="swatch-name">{c.name}</span>
+                    <span class="swatch-hex">{c.hex}</span>
                   </button>
                 ))}
               </div>
@@ -342,7 +353,7 @@ const TOOLS = [
   .wall-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 
   /* ── Paleta ───────────────────────────────────────────────────────── */
-  .palette-scroll { max-height: 300px; overflow-y: auto; padding-right: 4px; }
+  .palette-scroll { max-height: 340px; overflow-y: auto; padding-right: 6px; }
   .palette-group { margin-bottom: 16px; }
   .palette-group h4 {
     font-family: var(--sans);
@@ -353,8 +364,10 @@ const TOOLS = [
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  .swatch-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-  @media (max-width: 420px) { .swatch-grid { grid-template-columns: repeat(4, 1fr); } }
+  /* Cuatro columnas en vez de seis: con seis, el nombre no cabía y había que
+     recortarlo con puntos suspensivos. */
+  .swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 8px; }
+  @media (max-width: 420px) { .swatch-grid { grid-template-columns: repeat(3, 1fr); } }
 
   .swatch-cell {
     cursor: pointer;
@@ -375,15 +388,29 @@ const TOOLS = [
   }
   .swatch-cell:hover .swatch-sq { transform: scale(1.08); }
   .swatch-cell.active .swatch-sq { border-color: var(--ink); transform: scale(1.1); }
+  /*
+    El nombre y el código van a la vista y sin recortar. Quien llega aquí viene
+    a por el color: si le gusta uno, tiene que poder decir "quiero el Verde
+    Selva, el #1E3A2F" por teléfono sin tener que adivinar cómo se llamaba.
+  */
   .swatch-name {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--ink);
+    margin-top: 5px;
+    line-height: 1.2;
+    /* Dos líneas como mucho; los nombres largos no se cortan a mitad. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .swatch-hex {
     display: block;
     font-size: 0.58rem;
     color: var(--stone);
-    margin-top: 4px;
-    line-height: 1.15;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
   }
 
   /* ── Combinaciones ────────────────────────────────────────────────── */
@@ -425,6 +452,22 @@ const TOOLS = [
   .combo-dot:last-child { width: 10px; }
 
   .combo-text { display: flex; flex-direction: column; min-width: 0; }
+  .combo-btn.extra { display: none; }
+  .combo-row.expanded .combo-btn.extra { display: flex; }
+
+  .combo-more {
+    display: inline-block;
+    margin-bottom: 18px;
+    padding: 5px 12px;
+    border: 1px solid var(--control-border);
+    border-radius: 20px;
+    background: transparent;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: border-color .25s ease, background .25s ease;
+  }
+  .combo-more:hover { border-color: var(--ink); background: rgba(0, 0, 0, 0.03); }
+
   .combo-name { font-size: 0.78rem; font-weight: 500; line-height: 1.25; }
   .combo-mood {
     font-size: 0.64rem;
@@ -495,6 +538,10 @@ const TOOLS = [
   }
   .paint-tool .wall-chip:hover { border-color: var(--ink); }
   .paint-tool .wall-chip.active { border-color: var(--terracotta); color: var(--terracotta); font-weight: 500; }
+  /* El color aplicado se dice con su nombre, no sólo con el punto. */
+  .paint-tool .wall-chip .chip-color { color: var(--stone); }
+  .paint-tool .wall-chip.active .chip-color { color: inherit; opacity: 0.75; }
+
   .paint-tool .wall-chip .chip-dot {
     width: 11px; height: 11px;
     border-radius: 50%;

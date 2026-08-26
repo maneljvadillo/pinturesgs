@@ -299,6 +299,15 @@ export async function initPaintTool(): Promise<void> {
       if (r.color) dot.style.background = r.color;
       chip.append(dot, document.createTextNode(r.label));
 
+      // Con el color puesto, la pastilla dice CUÁL es. Quien está eligiendo
+      // color necesita el nombre a la vista para poder pedirlo luego.
+      if (r.color) {
+        const name = document.createElement('span');
+        name.className = 'chip-color';
+        name.textContent = `· ${colorName(r.color)}`;
+        chip.appendChild(name);
+      }
+
       chip.addEventListener('click', () => {
         selectedId = r.id;
         renderWallPicker();
@@ -514,6 +523,18 @@ export async function initPaintTool(): Promise<void> {
   document.querySelectorAll<HTMLElement>('.combo-btn').forEach((btn) => {
     btn.addEventListener('click', () => applyCombo(btn.dataset.combo!.split(','), btn));
   });
+
+  // Las combinaciones que no caben de entrada se despliegan con el botón.
+  const comboRow = document.getElementById('comboRow');
+  const comboMore = document.getElementById('comboMore');
+  if (comboRow && comboMore) {
+    const hidden = comboRow.querySelectorAll('.combo-btn.extra').length;
+    comboMore.addEventListener('click', () => {
+      const open = comboRow.classList.toggle('expanded');
+      comboMore.setAttribute('aria-expanded', String(open));
+      comboMore.textContent = open ? 'Ver menos' : `+${hidden} combinaciones más`;
+    });
+  }
   customColor.addEventListener('input', () => applyColor(customColor.value));
 
   // ── Comparador ──────────────────────────────────────────────────────────
