@@ -1,6 +1,19 @@
 ---
 /**
- * PROCESO — 5 pasos. Los puntos se iluminan al entrar en pantalla.
+ * PROCESO — 5 pasos en LÍNEA HORIZONTAL, no en columna.
+ *
+ * En vertical los cinco pasos ocupaban casi una pantalla entera y obligaban a
+ * bajar para entender algo que en realidad es muy simple: cinco casillas
+ * seguidas. En horizontal se ve el recorrido completo de un vistazo, que es lo
+ * que se quiere contar aquí.
+ *
+ * El hilo de color va de una casilla a la siguiente y se rellena al entrar en
+ * pantalla (`.lit`, la pone reveal-on-scroll.ts): la línea "se pinta" de
+ * izquierda a derecha según se baja.
+ *
+ * Por debajo de 980 px no cabe una fila de cinco, así que la lista pasa a ser
+ * un carrusel que se desliza con el dedo — sigue siendo horizontal, que es la
+ * idea, en vez de convertirse en la lista vertical de antes.
  */
 import { PROCESS_STEPS } from '~/data/process';
 
@@ -13,23 +26,26 @@ const ACCENTS = ['red', 'orange', 'green', 'turq', 'blue'];
     <div class="section-head">
       <span class="eyebrow">Proceso</span>
       <h2>Así damos color a tu proyecto.</h2>
+      <p>Cinco pasos, sin vueltas: de la primera llamada a la última mano de pintura.</p>
     </div>
 
-    <ol class="process-steps">
-      {PROCESS_STEPS.map((s, i) => (
-        <li
-          class="process-step"
-          style={`--accent: var(--c-${ACCENTS[i % ACCENTS.length]}); --accent-ink: var(--c-${ACCENTS[i % ACCENTS.length]}-ink);`}
-        >
-          <span class="ps-dot" aria-hidden="true"></span>
-          <div>
-            <span class="ps-num">{String(i + 1).padStart(2, '0')}</span>
+    <div class="process-track">
+      <ol class="process-steps">
+        {PROCESS_STEPS.map((s, i) => (
+          <li
+            class="process-step"
+            style={`--accent: var(--c-${ACCENTS[i % ACCENTS.length]}); --accent-ink: var(--c-${ACCENTS[i % ACCENTS.length]}-ink); --step-i: ${i};`}
+          >
+            <span class="ps-line" aria-hidden="true"></span>
+            <span class="ps-badge" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
             <h3 class="ps-title">{s.title}</h3>
             <p class="ps-desc">{s.desc}</p>
-          </div>
-        </li>
-      ))}
-    </ol>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <p class="process-swipe" aria-hidden="true">Desliza para ver los 5 pasos →</p>
   </div>
 </section>
 
@@ -39,68 +55,147 @@ const ACCENTS = ['red', 'orange', 'green', 'turq', 'blue'];
     padding: var(--section-y) 0;
     background: var(--gesso);
   }
-  .process-steps { position: relative; margin-top: 64px; list-style: none; }
 
-  .process-step {
+  .process-steps {
     display: grid;
-    grid-template-columns: 60px 1fr;
-    gap: 24px;
-    padding-bottom: 58px;
-    position: relative;
-  }
-  .process-step:last-child { padding-bottom: 0; }
-  @media (max-width: 700px) { .process-step { grid-template-columns: 40px 1fr; gap: 16px; } }
-
-  .ps-dot {
-    position: relative;
-    z-index: 1;
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    background: var(--stone-light);
-    margin-left: 22px;
-    margin-top: 6px;
-    transition: background .45s ease, transform .45s var(--ease-overshoot), box-shadow .45s ease;
-  }
-  @media (max-width: 700px) { .ps-dot { margin-left: 12px; } }
-  .process-step.lit .ps-dot {
-    background: var(--accent);
-    transform: scale(1.2);
-    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent);
+    grid-template-columns: repeat(5, 1fr);
+    list-style: none;
+    margin-top: 56px;
   }
 
   /*
-    Hilo de pintura entre un paso y el siguiente. Se rellena de arriba abajo
-    cuando el paso se enciende: el color va "goteando" por la lista según se
-    baja. Es `scaleY`, no `height`, para no recalcular el diseño.
+    El paso NO lleva separación lateral: la separación es padding suyo, para
+    que el hilo llegue pegado al siguiente y la línea se lea continua de punta
+    a punta en vez de partirse en cinco trozos sueltos.
   */
-  .process-step::before {
+  .process-step {
+    position: relative;
+    padding-right: 26px;
+  }
+
+  /* ── El hilo hasta el paso siguiente ──────────────────────────────── */
+  .ps-line {
+    position: absolute;
+    top: 22px;
+    left: 58px;
+    right: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--stone-light);
+    overflow: hidden;
+  }
+  .ps-line::after {
     content: '';
     position: absolute;
-    left: 30px;
-    top: 26px;
-    bottom: 6px;
-    width: 3px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 25%, transparent));
-    transform: scaleY(0);
-    transform-origin: top;
-    transition: transform .8s var(--ease-out-soft) .1s;
+    inset: 0;
+    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 45%, transparent));
+    transform: scaleX(0);
+    transform-origin: left;
+    /*
+      El retardo por paso es lo que hace que la línea se pinte de izquierda a
+      derecha. En columna el escalonado lo daba el propio scroll; en fila los
+      cinco pasos entran en pantalla a la vez, así que hay que ponerlo aquí o
+      el hilo entero aparecería de golpe.
+    */
+    transition: transform .8s var(--ease-out-soft) calc(var(--step-i, 0) * 180ms + 120ms);
   }
-  @media (max-width: 700px) { .process-step::before { left: 20px; } }
-  .process-step:last-child::before { display: none; }
-  .process-step.lit::before { transform: scaleY(1); }
+  .process-step.lit .ps-line::after { transform: scaleX(1); }
+  .process-step:last-child .ps-line { display: none; }
 
-  .process-step.lit .ps-num { color: var(--accent-ink, var(--stone)); }
-
-  .ps-num {
-    display: block;
+  /* ── La chapa con el número ───────────────────────────────────────── */
+  .ps-badge {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--stone-light);
     font-family: var(--serif);
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--stone);
-    margin-bottom: 6px;
-    transition: color .45s ease;
+    transition:
+      border-color .45s ease,
+      color .45s ease,
+      box-shadow .45s ease,
+      transform .45s var(--ease-overshoot);
+    transition-delay: calc(var(--step-i, 0) * 180ms);
   }
-  .ps-title { font-family: var(--serif); font-size: 1.45rem; margin-bottom: 8px; }
-  .ps-desc { color: var(--stone); font-size: 0.9rem; max-width: 440px; line-height: 1.5; }
+  .process-step.lit .ps-badge {
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    transform: scale(1.06);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  .ps-title {
+    font-family: var(--serif);
+    font-size: 1.18rem;
+    line-height: 1.25;
+    margin-top: 22px;
+  }
+  .ps-desc {
+    color: var(--stone);
+    font-size: 0.86rem;
+    line-height: 1.55;
+    margin-top: 8px;
+  }
+
+  /* El aviso de deslizar sólo tiene sentido cuando hay carrusel. */
+  .process-swipe { display: none; }
+
+  /* ── Carrusel: cuando cinco columnas dejan de caber ───────────────── */
+  @media (max-width: 980px) {
+    /*
+      El carrusel se sale del `wrap` a propósito: así la primera casilla
+      arranca alineada con el título y la última puede desplazarse hasta el
+      borde en vez de quedarse encajonada.
+    */
+    .process-track {
+      margin-inline: calc(var(--wrap-pad) * -1);
+      padding-inline: var(--wrap-pad);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      /*
+        Sin esto el anclaje ignora el `padding-inline` de arriba y la primera
+        casilla se queda pegada al borde de la pantalla, desalineada del
+        título. `scroll-padding` mueve el punto de anclaje, no la caja.
+      */
+      scroll-padding-inline-start: var(--wrap-pad);
+      scrollbar-width: none;
+      /* El resplandor de la chapa encendida no se debe recortar arriba. */
+      padding-block: 8px;
+      overscroll-behavior-x: contain;
+    }
+    .process-track::-webkit-scrollbar { display: none; }
+
+    .process-steps {
+      display: flex;
+      grid-template-columns: none;
+      margin-top: 40px;
+      width: max-content;
+    }
+    .process-step {
+      flex: 0 0 min(72vw, 280px);
+      scroll-snap-align: start;
+    }
+    /* Sin esto, la última casilla se pega al borde de la pantalla. */
+    .process-step:last-child { padding-right: var(--wrap-pad); }
+
+    .process-swipe {
+      display: block;
+      margin-top: 18px;
+      font-size: 0.74rem;
+      color: var(--stone);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ps-line::after { transition: none; }
+    .ps-badge { transition: none; }
+    .process-step.lit .ps-badge { transform: none; }
+  }
 </style>

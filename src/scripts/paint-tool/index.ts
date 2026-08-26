@@ -545,22 +545,6 @@ export async function initPaintTool(): Promise<void> {
   compareRange.addEventListener('input', () => setCompare(Number(compareRange.value)));
   setCompare(50);
 
-  document.getElementById('compareBtn')?.addEventListener('click', () => {
-    document.getElementById('stage')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // Barrido de ida y vuelta y de nuevo al centro.
-    const start = performance.now();
-    const DUR = 2200;
-    const step = (now: number) => {
-      const t = Math.min((now - start) / DUR, 1);
-      // 50 → 100 → 0 → 50
-      const v = 50 + 50 * Math.sin(t * Math.PI * 2);
-      compareRange.value = String(Math.round(v));
-      setCompare(v);
-      if (t < 1) requestAnimationFrame(step);
-      else { compareRange.value = '50'; setCompare(50); }
-    };
-    requestAnimationFrame(step);
-  });
 
   // ── Traspaso al formulario ──────────────────────────────────────────────
   function describeDesign(): string {
@@ -569,29 +553,31 @@ export async function initPaintTool(): Promise<void> {
     return painted.map((r) => `${r.label}: ${colorName(r.color!)} (${r.color!.toUpperCase()})`).join(' · ');
   }
 
+  /*
+    El formulario ya no está en esta página, así que el resumen del diseño se
+    deja en `sessionStorage` en cuanto cambia y lo recoge el formulario al
+    cargar. Se guarda aquí, y no al pulsar un botón concreto, porque a
+    presupuesto se puede ir por varios sitios (la cabecera, el pie, el móvil):
+    colgarlo de un único CTA hacía que por los demás se perdiera el diseño.
+    `sessionStorage` y no la URL: el resumen puede ser largo y no tiene por qué
+    ir a la vista en la barra de direcciones.
+  */
   function syncDesignSummary(): void {
     const chip = document.getElementById('formContextChip');
     const input = document.getElementById('disenoInput') as HTMLInputElement | null;
     const summary = describeDesign();
-    if (input) input.value = regions.some((r) => r.color) ? summary : '';
+    const painted = regions.some((r) => r.color);
+    if (input) input.value = painted ? summary : '';
     if (chip) chip.textContent = `🎨 Tu diseño: ${summary}`;
-  }
 
-  /*
-    El formulario ya no está en esta página, así que el resumen del diseño se
-    deja en `sessionStorage` justo antes de navegar y lo recoge el formulario
-    al cargar. `sessionStorage` y no la URL: el resumen puede ser largo y no
-    tiene por qué ir a la vista en la barra de direcciones.
-  */
-  document.getElementById('wantResultBtn')?.addEventListener('click', () => {
-    syncDesignSummary();
     try {
-      const summary = describeDesign();
-      if (regions.some((r) => r.color)) sessionStorage.setItem(DESIGN_KEY, summary);
+      if (painted) sessionStorage.setItem(DESIGN_KEY, summary);
+      else sessionStorage.removeItem(DESIGN_KEY);
     } catch {
       /* Modo privado o almacenamiento lleno: el formulario funciona igual. */
     }
-  });
+  }
+
 
   // ── Arranque ────────────────────────────────────────────────────────────
   seed();
