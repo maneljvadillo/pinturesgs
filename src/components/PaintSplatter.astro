@@ -9,15 +9,19 @@
  * pintura del objetivo no.
  *
  * ── Que no suene a metrónomo ──────────────────────────────────────────────
- * Nada llega a la vez. Son TRES salpicones grandes que caen desfasados entre
- * sí (uno se adelanta al impacto, otro se retrasa) y 42 gotas repartidas en
- * casi medio segundo, en oleadas: primero las de cerca del golpe, luego las
- * rezagadas. Cuando todo entra en el mismo fotograma el ojo lo lee como un
+ * Nada llega a la vez. Son DOS salpicones grandes que caen desfasados entre
+ * sí (uno se adelanta al impacto) y 16 gotas repartidas en unas décimas:
+ * primero las de cerca del golpe, luego las rezagadas. Cuando todo entra en el mismo fotograma el ojo lo lee como un
  * único fogonazo mecánico; escalonado, lo lee como pintura volando.
  *
  * Cada gota además cae con SU giro y SU ritmo de chorreo, y al estamparse se
  * aplasta y rebota (`scale3d` con la X y la Y distintas). Eso es lo que separa
  * un salpicón de un círculo que crece.
+ *
+ * Son DIECISÉIS gotas, cuatro de ellas chorreando. Antes eran cuarenta y dos
+ * con veintidós regueros y aquello no acompañaba al logotipo: competía con él
+ * y seguía moviéndose cinco segundos después de que hubiera terminado todo.
+ * Aquí el protagonista es el logotipo; esto es el acompañamiento.
  *
  * ── Por qué las curvas van dentro de las keyframes ────────────────────────
  * `animation-timing-function` en la regla se aplica a CADA tramo, no al
@@ -43,54 +47,27 @@ const IMPACT = { x: 71, y: 47 };
  * delante del cubo) y el tercero se retrasa.
  */
 const SPLASHES = [
-  { x: 71, y: 47, s: 88, t: 0,   rot: -6,  o: 0.7,  r: '46% 54% 38% 62% / 55% 42% 58% 45%' },
-  { x: 50, y: 63, s: 56, t: -90, rot: 13,  o: 0.44, r: '58% 42% 62% 38% / 42% 63% 37% 58%' },
-  { x: 86, y: 31, s: 48, t: 150, rot: -15, o: 0.4,  r: '39% 61% 44% 56% / 62% 37% 63% 38%' },
+  { x: 71, y: 47, s: 72, t: 0,  rot: -6, o: 0.6,  r: '46% 54% 38% 62% / 55% 42% 58% 45%' },
+  { x: 53, y: 60, s: 42, t: -60, rot: 12, o: 0.34, r: '58% 42% 62% 38% / 42% 63% 37% 58%' },
 ];
 
 const DROPS = [
-  { x: 69.9, y: 51.2, s: 1.86, c: 'yellow', t: 23, rot: 9, run: 7.9, rd: 1794, rs: 118, stay: false },
-  { x: 80.4, y: 38.3, s: 4.72, c: 'orange', t: 40, rot: -13, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 76.8, y: 55.7, s: 2.3, c: 'yellow', t: 57, rot: 28, run: 18.7, rd: 2868, rs: 548, stay: false },
-  { x: 56.7, y: 34.5, s: 3.32, c: 'green', t: 59, rot: 1, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 70.5, y: 30.1, s: 4.07, c: 'blue', t: 75, rot: -6, run: 7, rd: 1974, rs: 452, stay: false },
-  { x: 58.4, y: 56, s: 2.96, c: 'purple', t: 107, rot: -44, run: 25.8, rd: 3179, rs: 416, stay: false },
-  { x: 57.2, y: 22.1, s: 4.19, c: 'orange', t: 112, rot: -18, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 43.5, y: 21.5, s: 1.58, c: 'turq', t: 114, rot: -13, run: 5, rd: 1386, rs: 409, stay: false },
-  { x: 58.9, y: 76, s: 2.44, c: 'red', t: 116, rot: -5, run: 17, rd: 2455, rs: 160, stay: false },
-  { x: 36, y: 48.1, s: 1.2, c: 'green', t: 119, rot: 1, run: 4.2, rd: 1358, rs: 547, stay: false },
-  { x: 40.7, y: 74.4, s: 1.67, c: 'yellow', t: 132, rot: 9, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 87.1, y: 59.2, s: 2.63, c: 'yellow', t: 139, rot: 36, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 62.1, y: 62.1, s: 4.34, c: 'orange', t: 143, rot: 42, run: 17.9, rd: 2603, rs: 247, stay: false },
-  { x: 45.9, y: 64.5, s: 1.2, c: 'green', t: 146, rot: -14, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 81.7, y: 88, s: 2.91, c: 'green', t: 157, rot: 21, run: 23.2, rd: 2762, rs: 322, stay: true },
-  { x: 43, y: 92.8, s: 1.73, c: 'purple', t: 161, rot: 21, run: 2.1, rd: 1416, rs: 432, stay: false },
-  { x: 101.7, y: 64.3, s: 3.62, c: 'blue', t: 163, rot: -20, run: 21.3, rd: 2698, rs: 506, stay: true },
-  { x: 95.2, y: 80.3, s: 1.4, c: 'purple', t: 170, rot: 2, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 17.4, y: 32.2, s: 1.2, c: 'turq', t: 171, rot: 6, run: 7.5, rd: 1728, rs: 419, stay: false },  // en móvil el titular se centra y esta caía justo encima: no deja residuo
-  { x: 70, y: 102.3, s: 2.04, c: 'yellow', t: 178, rot: 21, run: 12.4, rd: 2224, rs: 352, stay: false },
-  { x: 8.1, y: 57, s: 1.2, c: 'yellow', t: 184, rot: -28, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 39.3, y: 88, s: 1.36, c: 'pink', t: 189, rot: -26, run: 0, rd: 0, rs: 0, stay: true },
-  { x: 96.1, y: 96.4, s: 2.33, c: 'purple', t: 190, rot: 4, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 94.2, y: 1.9, s: 2.84, c: 'red', t: 198, rot: 38, run: 23.7, rd: 3354, rs: 269, stay: false },
-  { x: 85.9, y: 5.1, s: 1.19, c: 'orange', t: 206, rot: 10, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 9.4, y: 90.9, s: 1.7, c: 'pink', t: 207, rot: -6, run: 0, rd: 0, rs: 0, stay: true },
-  { x: 32.1, y: 29.6, s: 1.2, c: 'green', t: 210, rot: -23, run: 3.5, rd: 1192, rs: 470, stay: false },
-  { x: 60.8, y: 86.9, s: 1.97, c: 'orange', t: 215, rot: -4, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 71.8, y: 40.2, s: 4.41, c: 'orange', t: 225, rot: 18, run: 7.5, rd: 1870, rs: 91, stay: false },
-  { x: 30, y: 11.3, s: 2.06, c: 'blue', t: 248, rot: -4, run: 13.7, rd: 2362, rs: 458, stay: false },
-  { x: 19.5, y: 73.4, s: 2.81, c: 'red', t: 255, rot: 11, run: 20.1, rd: 2624, rs: 433, stay: false },
-  { x: 32.1, y: 99, s: 1.74, c: 'red', t: 265, rot: 20, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 48, y: 29.5, s: 3.62, c: 'orange', t: 296, rot: 0, run: 5.3, rd: 1540, rs: 214, stay: false },
-  { x: 83.8, y: 42.8, s: 1.96, c: 'green', t: 300, rot: 20, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 98.8, y: 13.6, s: 1.99, c: 'blue', t: 314, rot: -11, run: 4.9, rd: 1652, rs: 302, stay: false },
-  { x: 65.2, y: 16.9, s: 1.69, c: 'pink', t: 329, rot: -31, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 58.7, y: 26.2, s: 3.73, c: 'yellow', t: 337, rot: -4, run: 13.6, rd: 2292, rs: 543, stay: false },
-  { x: 49.6, y: 83.5, s: 2.78, c: 'red', t: 354, rot: 8, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 11.2, y: 39.9, s: 1.2, c: 'turq', t: 376, rot: -27, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 83.7, y: 95, s: 3.06, c: 'pink', t: 391, rot: 16, run: 22.5, rd: 3059, rs: 370, stay: false },
-  { x: 25.2, y: 49.2, s: 1.2, c: 'red', t: 394, rot: -4, run: 0, rd: 0, rs: 0, stay: false },
-  { x: 42.2, y: 10.3, s: 2.42, c: 'pink', t: 401, rot: -19, run: 0, rd: 0, rs: 0, stay: true },
+  { x: 74.4, y: 57.9, s: 2.74, c: 'green', t: 23, rot: 3, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 78, y: 72.8, s: 2.16, c: 'green', t: 50, rot: 7, run: 10, rd: 993, rs: 218, stay: false },
+  { x: 48.1, y: 29.9, s: 2.54, c: 'red', t: 57, rot: -18, run: 3.5, rd: 698, rs: 112, stay: false },
+  { x: 87.5, y: 45.9, s: 3.19, c: 'purple', t: 65, rot: -8, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 35.6, y: 34.6, s: 0.95, c: 'yellow', t: 69, rot: 20, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 25, y: 29.7, s: 0.95, c: 'orange', t: 73, rot: 26, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 65.2, y: 36.5, s: 2.65, c: 'yellow', t: 83, rot: 26, run: 7.7, rd: 995, rs: 63, stay: false },
+  { x: 49.7, y: 18.1, s: 1.2, c: 'turq', t: 85, rot: 28, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 25.9, y: 43.3, s: 0.95, c: 'green', t: 87, rot: 10, run: 1.9, rd: 510, rs: 104, stay: false },
+  { x: 36.3, y: 48.1, s: 0.95, c: 'green', t: 95, rot: -10, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 97.3, y: 30.5, s: 1.44, c: 'orange', t: 95, rot: -14, run: 0, rd: 0, rs: 0, stay: true },
+  { x: 16.6, y: 15.2, s: 1.44, c: 'yellow', t: 110, rot: 28, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 28.5, y: 101.9, s: 0.85, c: 'yellow', t: 127, rot: 18, run: 0, rd: 0, rs: 0, stay: true },
+  { x: 24.9, y: 5.6, s: 0.94, c: 'blue', t: 128, rot: -29, run: 0, rd: 0, rs: 0, stay: false },
+  { x: 14.1, y: 67, s: 0.95, c: 'turq', t: 136, rot: -23, run: 0, rd: 0, rs: 0, stay: true },
+  { x: 69.7, y: 101.3, s: 1.47, c: 'green', t: 153, rot: -18, run: 0, rd: 0, rs: 0, stay: true },
 ];
 ---
 
@@ -152,8 +129,8 @@ const DROPS = [
     filter: blur(10px) saturate(1.4);
     opacity: 0;
     will-change: transform, opacity;
-    /* 1,6 s para disolverse: es lo que hace que se vaya en vez de cortarse. */
-    animation: psSplash 1.6s linear calc(var(--hero-impact) + var(--t)) both;
+    /* 900 ms: lo justo para que se disuelva en vez de cortarse. */
+    animation: psSplash 900ms linear calc(var(--hero-impact) + var(--t)) both;
   }
   @keyframes psSplash {
     0%   { opacity: 0;       transform: rotate(var(--rot)) scale(.14);
@@ -175,7 +152,7 @@ const DROPS = [
     background: radial-gradient(circle, rgba(255,255,255,.5) 0%, rgba(255,255,255,.16) 24%, transparent 56%);
     opacity: 0;
     will-change: transform, opacity;
-    animation: psBloom 640ms linear var(--hero-impact) both;
+    animation: psBloom 400ms linear var(--hero-impact) both;
   }
   @keyframes psBloom {
     0%   { opacity: 0;   transform: scale(.06);
@@ -211,7 +188,7 @@ const DROPS = [
       Con dos animaciones encadenadas sobre `opacity` la fase de espera pelea
       con el relleno de la primera y la gota parpadea al empezar la segunda.
     */
-    animation: psDrop 4.4s linear calc(var(--hero-impact) + var(--t)) both;
+    animation: psDrop 2s linear calc(var(--hero-impact) + var(--t)) both;
   }
   /* Brillo húmedo. Sin esto la gota es un círculo plano de color. */
   .ps-drop::before {
@@ -234,7 +211,7 @@ const DROPS = [
            animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
     18%  { transform: rotate(var(--rot)) scale(1);
            animation-timing-function: linear; }
-    62%  { opacity: 1; transform: rotate(var(--rot)) scale(1); }
+    50%  { opacity: 1; transform: rotate(var(--rot)) scale(1); }
     100% { opacity: 0; transform: rotate(var(--rot)) scale(1); }
   }
   /* Las de los bordes NO se van del todo: quedan como residuo tenue. Si
@@ -249,8 +226,8 @@ const DROPS = [
            animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
     18%  { transform: rotate(var(--rot)) scale(1);
            animation-timing-function: linear; }
-    62%  { opacity: 1; transform: rotate(var(--rot)) scale(1); }
-    100% { opacity: .16; transform: rotate(var(--rot)) scale(1); }
+    50%  { opacity: 1; transform: rotate(var(--rot)) scale(1); }
+    100% { opacity: .15; transform: rotate(var(--rot)) scale(1); }
   }
 
   /* ── El chorretón ─────────────────────────────────────────────────── */

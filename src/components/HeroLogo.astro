@@ -110,7 +110,7 @@ const logoMask = mask.src;
     filter: saturate(1.7) blur(7px);
     opacity: 0;
     will-change: transform, opacity;
-    animation: ltSplat 1.5s linear var(--hero-impact) both;
+    animation: ltSplat 850ms linear var(--hero-impact) both;
   }
   @keyframes ltSplat {
     0%   { opacity: 0;   transform: rotate(-7deg) scale(.5);
@@ -134,7 +134,7 @@ const logoMask = mask.src;
       respiración va apareciendo por debajo mientras el logotipo todavía se
       asienta, y no hay ni un fotograma de logotipo parado.
     */
-    animation: logoBreathe 7s linear 620ms infinite;
+    animation: logoBreathe 7s linear 400ms infinite;
     will-change: transform;
     backface-visibility: hidden;
   }
@@ -168,7 +168,7 @@ const logoMask = mask.src;
     */
     animation:
       ltThrow var(--hero-impact) cubic-bezier(.4, .05, .5, .75) both,
-      ltLand 620ms linear var(--hero-impact) forwards;
+      ltLand 380ms linear var(--hero-impact) forwards;
     will-change: transform;
     backface-visibility: hidden;
   }
@@ -178,41 +178,39 @@ const logoMask = mask.src;
     ── La clave de que salga fino ────────────────────────────────────────
     El vuelo y el aterrizaje son DOS animaciones, pero tienen que leerse como
     UN solo movimiento que frena. Para eso la velocidad no puede caer de golpe
-    al pasar de una a otra.
+    al pasar de una a otra: el vuelo YA VIENE frenando al llegar (su curva sale
+    con pendiente baja) y el aterrizaje entra con pendiente alta para recoger
+    esa velocidad. El resultado es una sola curva de frenada de punta a punta.
 
-    Antes el vuelo terminaba acelerando a tope: 79 px de crecimiento por
-    fotograma, y el aterrizaje sólo tenía 86 px de recorrido por delante. La
-    velocidad se desplomaba a 8 en cuatro fotogramas y luego iba dando saltos
-    de 63 a 0,6 y vuelta. Eso, visto, es un logotipo que se atasca.
+    Y el aterrizaje NO rebota: la escala en X baja siempre, sin volver atrás
+    (1.12 → 1.045 → 1.002 → 1). Un rebote obliga a la velocidad a pasar por
+    cero en cada cambio de sentido, y cada uno de esos ceros es un tironcito.
+    Queda un asentamiento de una centésima en la Y, que se lee como peso.
 
-    Ahora el vuelo YA VIENE frenando al llegar (la curva sale con pendiente
-    baja) y el aterrizaje entra con pendiente alta para recoger esa velocidad.
-    El resultado es una sola curva de frenada de principio a fin.
+    ── Recorrido corto, y a propósito ────────────────────────────────────
+    De 0.52 a 1.12, no de 0.26 a 1.14, y en 640 ms en vez de 1040. Venir desde
+    un punto diminuto y con un rebote largo detrás hace la entrada aparatosa y
+    LENTA: se ve venir el logotipo durante medio segundo antes de que pase
+    nada. Un recorrido corto no es menos vistoso, es más limpio.
 
-    Y el aterrizaje ya no rebota: la escala en X baja siempre, sin volver
-    atrás (1.14 → 1.075 → 1.004 → 1). Un rebote obliga a la velocidad a pasar
-    por cero en cada cambio de sentido, y cada uno de esos ceros es un
-    tironcito. El golpe lo cuentan la salpicadura y el temblor de la pantalla;
-    el logotipo sólo tiene que aterrizar bien.
-
-    Queda un asentamiento mínimo en la Y (1.005 → 1.018) que hace que la masa
-    "recupere altura" al posarse. Es una centésima: no se lee como rebote,
-    se lee como peso.
+    El golpe lo cuentan la salpicadura y el temblor de la pantalla; el
+    logotipo sólo tiene que aterrizar bien.
   */
   @keyframes ltThrow {
-    0%   { opacity: 0; transform: translate3d(-7%, 22%, 0) rotate(-11deg) scale(.26); }
-    30%  { opacity: 1; }
-    100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(3deg) scale(1.14); }
+    0%   { opacity: 0; transform: translate3d(-4%, 14%, 0) rotate(-6deg) scale(.52); }
+    34%  { opacity: 1; }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(2deg) scale(1.12); }
   }
   @keyframes ltLand {
-    0%   { transform: rotate(3deg) scale3d(1.14, 1.14, 1);
-           animation-timing-function: cubic-bezier(.06, .28, .3, 1); }
-    26%  { transform: rotate(.9deg) scale3d(1.075, 1.005, 1);
+    0%   { transform: rotate(2deg) scale3d(1.12, 1.12, 1);
+           animation-timing-function: cubic-bezier(.09, .3, .3, 1); }
+    30%  { transform: rotate(.6deg) scale3d(1.045, 1.002, 1);
            animation-timing-function: cubic-bezier(.3, .2, .32, 1); }
-    60%  { transform: rotate(-.35deg) scale3d(1.004, 1.018, 1);
+    65%  { transform: rotate(-.2deg) scale3d(1.002, 1.012, 1);
            animation-timing-function: cubic-bezier(.34, .12, .36, 1); }
     100% { transform: rotate(0deg) scale3d(1, 1, 1); }
   }
+
 
 
 
@@ -269,7 +267,7 @@ const logoMask = mask.src;
     transform: translate3d(0, 0, 0);
     /* Empieza cuando el logotipo ya se ha asentado: si no, el reflejo barre
        una forma que todavía está rebotando y no se lee. */
-    animation: logoGloss 7s ease-in-out 2.2s infinite;
+    animation: logoGloss 7s ease-in-out 1.6s infinite;
   }
   @keyframes logoGloss {
     0%        { transform: translate3d(0, 0, 0); }

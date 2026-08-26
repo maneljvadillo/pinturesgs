@@ -137,7 +137,7 @@ import BrushCursor from '~/components/BrushCursor.astro';
       El relleno `backwards` es imprescindible: sin él, durante la espera no
       habría transformación y al arrancar daría un salto del 5%.
     */
-    animation: colorDrift 8s ease-in-out 1.6s infinite alternate backwards;
+    animation: colorDrift 8s ease-in-out 900ms infinite alternate backwards;
   }
   @keyframes colorDrift {
     0%   { transform: translate3d(-5%, -3.5%, 0) scale(1.04); }
@@ -187,7 +187,7 @@ import BrushCursor from '~/components/BrushCursor.astro';
       El temblor arranca en `--hero-impact`, el mismo instante que usan el
       logotipo y la salpicadura.
     */
-    animation: heroJolt 620ms linear var(--hero-impact) both;
+    animation: heroJolt 380ms linear var(--hero-impact) both;
   }
   /*
     Amplitud decreciente: un golpe se amortigua, no oscila igual todo el rato.
@@ -200,13 +200,13 @@ import BrushCursor from '~/components/BrushCursor.astro';
   @keyframes heroJolt {
     0%   { transform: translate3d(0, 0, 0);
            animation-timing-function: cubic-bezier(.2, .9, .35, 1); }
-    13%  { transform: translate3d(-6px, 4px, 0) rotate(-.26deg);
+    13%  { transform: translate3d(-4px, 3px, 0) rotate(-.18deg);
            animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
-    36%  { transform: translate3d(4px, -3px, 0) rotate(.17deg);
+    36%  { transform: translate3d(2.6px, -2px, 0) rotate(.11deg);
            animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
-    62%  { transform: translate3d(-2px, 1.5px, 0) rotate(-.08deg);
+    62%  { transform: translate3d(-1.2px, 1px, 0) rotate(-.05deg);
            animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
-    84%  { transform: translate3d(1px, -.5px, 0) rotate(.03deg);
+    84%  { transform: translate3d(.5px, -.3px, 0) rotate(.02deg);
            animation-timing-function: cubic-bezier(.4, 0, .4, 1); }
     100% { transform: translate3d(0, 0, 0) rotate(0deg); }
   }

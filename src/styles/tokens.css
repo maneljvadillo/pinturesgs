@@ -85,7 +85,7 @@
     temblor del contenido (Hero)—, así que vive aquí y no repetido en cada
     una. Cambia este número y las tres se mueven juntas.
   */
-  --hero-impact: 420ms;
+  --hero-impact: 260ms;
 
   /* ── Curvas de animación ───────────────────────────────────────────── */
   --ease-out-soft: cubic-bezier(.2, .8, .2, 1);
