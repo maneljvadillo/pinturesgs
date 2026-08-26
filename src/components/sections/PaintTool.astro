@@ -133,7 +133,7 @@ const TOOLS = [
       <div class="pt-card">
         <h3>Paleta</h3>
 
-        <p class="pt-card-sub">Combinaciones para las tres paredes:</p>
+        <p class="pt-card-sub">Diez combinaciones probadas — pintan las tres zonas de una vez:</p>
         <div class="combo-row">
           {COMBOS.map((c) => (
             <button
@@ -141,13 +141,16 @@ const TOOLS = [
               class="combo-btn"
               data-combo={c.colors.join(',')}
               data-name={c.name}
-              title={c.mood}
+              title={`${c.name} — ${c.mood}`}
+              aria-label={`Aplicar la combinación ${c.name}: ${c.mood}`}
             >
               <span class="combo-dots" aria-hidden="true">
                 {c.colors.map((hex) => <span class="combo-dot" style={`background:${hex}`}></span>)}
               </span>
-              <span class="combo-name">{c.name}</span>
-              <span class="combo-mood">{c.mood}</span>
+              <span class="combo-text">
+                <span class="combo-name">{c.name}</span>
+                <span class="combo-mood">{c.mood}</span>
+              </span>
             </button>
           ))}
         </div>
@@ -390,15 +393,15 @@ const TOOLS = [
   }
   .combo-btn {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding: 10px 12px;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
     border: 1px solid var(--stone-light);
     border-radius: 8px;
     background: #fff;
     cursor: pointer;
     text-align: left;
+    min-width: 0;
     transition: border-color .25s ease, transform .25s var(--ease-out-soft), box-shadow .25s ease;
   }
   .combo-btn:hover, .combo-btn:focus-visible {
@@ -408,19 +411,33 @@ const TOOLS = [
   }
   .combo-btn.active { border-color: var(--ink); }
 
-  /* Las tres muestras, en el mismo orden que las paredes. */
-  .combo-dots { display: flex; gap: 3px; }
+  /* Las tres muestras, en el mismo orden que las zonas. */
+  .combo-dots { display: flex; gap: 2px; flex: none; }
   .combo-dot {
-    width: 18px; height: 18px;
-    border-radius: 4px;
+    width: 15px; height: 26px;
+    border-radius: 3px;
     border: 1px solid rgba(0, 0, 0, 0.10);
   }
-  .combo-name { font-size: 0.82rem; font-weight: 500; }
-  .combo-mood { font-size: 0.68rem; color: var(--stone); line-height: 1.3; }
+  /* La tercera muestra es el plano de cierre y siempre va clara: se marca algo
+     más estrecha para que se lea como acompañamiento, no como protagonista. */
+  .combo-dot:last-child { width: 10px; }
+
+  .combo-text { display: flex; flex-direction: column; min-width: 0; }
+  .combo-name { font-size: 0.78rem; font-weight: 500; line-height: 1.25; }
+  .combo-mood {
+    font-size: 0.64rem;
+    color: var(--stone);
+    line-height: 1.25;
+    /* Una sola línea: con diez combinaciones, dos líneas alargaban la tarjeta
+       de la paleta más que la propia paleta. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   @media (max-width: 480px) {
-    .combo-row { grid-template-columns: 1fr 1fr; }
     .combo-mood { display: none; }
+    .combo-dot { height: 22px; }
   }
 
   .custom-color-row {
