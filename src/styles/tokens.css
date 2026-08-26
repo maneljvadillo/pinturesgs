@@ -77,6 +77,16 @@
   --wrap-pad: 40px;
   --section-y: 120px;
 
+  /*
+    ── El lanzamiento del hero ────────────────────────────────────────
+    Instante del impacto: el momento en que el cubo de pintura llega al
+    cristal. Lo comparten TRES piezas que tienen que sonar a la vez —el
+    logotipo (HeroLogo), la salpicadura de la pantalla (PaintSplatter) y el
+    temblor del contenido (Hero)—, así que vive aquí y no repetido en cada
+    una. Cambia este número y las tres se mueven juntas.
+  */
+  --hero-impact: 300ms;
+
   /* ── Curvas de animación ───────────────────────────────────────────── */
   --ease-out-soft: cubic-bezier(.2, .8, .2, 1);
   --ease-in-out-firm: cubic-bezier(.65, 0, .35, 1);

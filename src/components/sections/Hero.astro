@@ -9,6 +9,7 @@
  *   2. .hero-inner        el mensaje y el logotipo, siempre por encima.
  */
 import HeroLogo from '~/components/HeroLogo.astro';
+import PaintSplatter from '~/components/PaintSplatter.astro';
 import BrushCursor from '~/components/BrushCursor.astro';
 ---
 
@@ -49,6 +50,12 @@ import BrushCursor from '~/components/BrushCursor.astro';
   </div>
 
   <div class="scroll-cue" aria-hidden="true">Descubre más</div>
+
+  <!--
+    La pintura del cubo va LA ÚLTIMA y por encima de todo lo demás: está
+    pegada al cristal, delante de la escena, no dentro de ella.
+  -->
+  <PaintSplatter />
 </section>
 
 <style>
@@ -153,6 +160,25 @@ import BrushCursor from '~/components/BrushCursor.astro';
     grid-template-columns: 1.1fr 1fr;
     align-items: center;
     min-height: 56vh;
+    /*
+      El golpe del cubo. Tiembla el CONTENIDO, no la salpicadura: si te
+      estampan pintura en el objetivo, lo que se sacude es la cámara; lo que
+      hay pegado al cristal se queda donde está. Invertirlo —o mover las dos
+      cosas— es justo lo que delata que es una animación.
+
+      El temblor arranca en `--hero-impact`, el mismo instante que usan el
+      logotipo y la salpicadura.
+    */
+    animation: heroJolt 440ms cubic-bezier(.2, .7, .3, 1) var(--hero-impact) both;
+  }
+  /* Amplitud decreciente: un golpe se amortigua, no oscila igual todo el rato. */
+  @keyframes heroJolt {
+    0%   { transform: translate3d(0, 0, 0); }
+    12%  { transform: translate3d(-9px, 6px, 0) rotate(-.4deg); }
+    30%  { transform: translate3d(6px, -5px, 0) rotate(.28deg); }
+    50%  { transform: translate3d(-4px, 3px, 0) rotate(-.15deg); }
+    72%  { transform: translate3d(2px, -1px, 0) rotate(.06deg); }
+    100% { transform: translate3d(0, 0, 0) rotate(0deg); }
   }
 
   .hero-message {
@@ -197,6 +223,7 @@ import BrushCursor from '~/components/BrushCursor.astro';
      logotipo lo resuelve HeroLogo.astro por su cuenta. */
   @media (prefers-reduced-motion: reduce) {
     .hero-color-layer { animation: none; }
+    .hero-inner { animation: none; transform: none; }
   }
 
   /* ── Indicador de scroll ──────────────────────────────────────────── */

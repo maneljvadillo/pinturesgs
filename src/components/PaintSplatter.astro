@@ -1,0 +1,247 @@
+---
+/**
+ * LA SALPICADURA DE LA PANTALLA.
+ *
+ * La idea: alguien te tira un cubo de pintura a la cara. Lo que ves no es una
+ * mancha "dentro" de la página, es pintura que ha quedado pegada al CRISTAL —
+ * delante de todo (`z-index: 5`), y por eso el contenido de detrás tiembla con
+ * el golpe mientras estas gotas se quedan quietas: la cámara se ha movido, la
+ * pintura del objetivo no.
+ *
+ * Cada gota hace tres cosas, en este orden:
+ *   1. revienta (`psDrop`): aparece de golpe, se pasa de tamaño y se asienta;
+ *   2. chorrea (`psRun` + `psBulb`): un reguero baja desde la gota con una
+ *      bola gorda en la punta. Arranca rápido y frena mucho, que es lo que
+ *      hace la pintura de verdad al perder impulso contra el vidrio;
+ *   3. se apaga. Diez gotas de los bordes NO se van del todo y quedan como
+ *      residuo tenue: si desaparece todo, parece un GIF; si se queda todo,
+ *      tapa el titular.
+ *
+ * El reguero y su bola son DOS elementos, no uno. Con uno solo habría que
+ * estirarlo con `scaleY` y la bola de la punta saldría deformada; así el
+ * reguero se estira y la bola sólo baja, sin deformarse. Ambos comparten
+ * duración y curva, así que caen pegados.
+ *
+ * El reparto de gotas está generado con una semilla fija (no es aleatorio en
+ * cada carga): más densidad y más tamaño cerca del impacto, sólo motas sobre
+ * la zona del titular y chorretones sólo donde hay masa suficiente para que
+ * caiga algo.
+ */
+
+/** Dónde aterriza el logotipo, en % del hero: el centro del impacto. */
+const IMPACT = { x: 71, y: 47 };
+
+const DROPS = [
+  { x: 74.4, y: 57.9, s: 3.37, c: 'green', t: 25, run: 0, rd: 0, stay: false },
+  { x: 62.5, y: 40.9, s: 3.67, c: 'red', t: 29, run: 14.2, rd: 1640, stay: false },
+  { x: 57.4, y: 38.8, s: 2.05, c: 'blue', t: 34, run: 8.6, rd: 1383, stay: false },
+  { x: 61.9, y: 53.7, s: 2.53, c: 'pink', t: 39, run: 23.1, rd: 2297, stay: false },
+  { x: 73.9, y: 51.4, s: 3.33, c: 'orange', t: 43, run: 12, rd: 1393, stay: false },
+  { x: 58.3, y: 59.2, s: 2.26, c: 'purple', t: 47, run: 0, rd: 0, stay: false },
+  { x: 82.3, y: 16.7, s: 1.56, c: 'yellow', t: 62, run: 0, rd: 0, stay: true },
+  { x: 50.4, y: 36, s: 1.59, c: 'orange', t: 63, run: 0, rd: 0, stay: false },
+  { x: 38.4, y: 30.2, s: 1.15, c: 'orange', t: 70, run: 0, rd: 0, stay: false },
+  { x: 72.8, y: 82.9, s: 2.2, c: 'green', t: 74, run: 0, rd: 0, stay: false },
+  { x: 44.8, y: 59.7, s: 1.15, c: 'yellow', t: 75, run: 5.8, rd: 1305, stay: false },
+  { x: 87.5, y: 72.9, s: 1.94, c: 'purple', t: 79, run: 8.7, rd: 1413, stay: true },
+  { x: 25.7, y: 49.2, s: 1.15, c: 'orange', t: 82, run: 0, rd: 0, stay: false },
+  { x: 55.2, y: 12.6, s: 1.83, c: 'green', t: 82, run: 6.5, rd: 1398, stay: true },
+  { x: 51, y: 67.2, s: 1.63, c: 'green', t: 88, run: 0, rd: 0, stay: false },
+  { x: 85.2, y: 5.9, s: 1.07, c: 'purple', t: 88, run: 0, rd: 0, stay: false },
+  { x: 37, y: 60, s: 1.15, c: 'yellow', t: 92, run: 0, rd: 0, stay: false },
+  { x: 52.3, y: 25.8, s: 3.09, c: 'red', t: 93, run: 0, rd: 0, stay: false },
+  { x: 99.8, y: 48.9, s: 3.17, c: 'blue', t: 93, run: 0, rd: 0, stay: false },
+  { x: 36.3, y: 48.1, s: 1.15, c: 'green', t: 94, run: 0, rd: 0, stay: false },
+  { x: 96.7, y: 5.1, s: 1.52, c: 'orange', t: 98, run: 0, rd: 0, stay: true },
+  { x: 40.6, y: 62.9, s: 1.15, c: 'pink', t: 103, run: 0, rd: 0, stay: false },
+  { x: 90.5, y: 16, s: 3.1, c: 'pink', t: 104, run: 11.2, rd: 1325, stay: false },
+  { x: 34.7, y: 74.1, s: 2.48, c: 'red', t: 107, run: 13.2, rd: 1853, stay: false },
+  { x: 26.9, y: 61.9, s: 1.15, c: 'orange', t: 113, run: 0, rd: 0, stay: false },
+  { x: 48.6, y: 12.2, s: 2.31, c: 'purple', t: 116, run: 13.3, rd: 1460, stay: true },
+  { x: 13.2, y: 19.8, s: 1.85, c: 'purple', t: 118, run: 0, rd: 0, stay: false },
+  { x: 101.3, y: 95.9, s: 1.42, c: 'pink', t: 121, run: 0, rd: 0, stay: true },
+  { x: 16.6, y: 15.2, s: 1.62, c: 'yellow', t: 123, run: 0, rd: 0, stay: false },
+  { x: 72.6, y: 87.5, s: 2.25, c: 'pink', t: 123, run: 0, rd: 0, stay: false },
+  { x: 89, y: 92.2, s: 1.69, c: 'yellow', t: 127, run: 2, rd: 1157, stay: false },
+  { x: 16.4, y: 51.3, s: 1.15, c: 'orange', t: 128, run: 3.7, rd: 1238, stay: false },
+  { x: 71.4, y: 100.7, s: 2.05, c: 'turq', t: 137, run: 23.1, rd: 2326, stay: false },
+  { x: 5.7, y: 58.7, s: 1.15, c: 'green', t: 144, run: 0, rd: 0, stay: false },
+  { x: 39.5, y: 87.3, s: 1.17, c: 'yellow', t: 146, run: 0, rd: 0, stay: true },
+  { x: 15.5, y: 75.6, s: 0.98, c: 'orange', t: 146, run: 2.8, rd: 1055, stay: true },
+  { x: 79.8, y: 99.7, s: 1.83, c: 'orange', t: 147, run: 0, rd: 0, stay: true },
+  { x: 19.7, y: 1.2, s: 1.37, c: 'turq', t: 159, run: 0, rd: 0, stay: true },
+];
+---
+
+<div
+  class="paint-splatter"
+  aria-hidden="true"
+  style={`--cx: ${IMPACT.x}%; --cy: ${IMPACT.y}%;`}
+>
+  <span class="ps-wash"></span>
+  <span class="ps-bloom"></span>
+
+  {DROPS.map((d) => (
+    <i
+      class:list={['ps-drop', { stay: d.stay }]}
+      style={`--x: ${d.x}%; --y: ${d.y}%; --s: ${d.s}vmin; --c: var(--c-${d.c}); --t: ${d.t}ms; --run: ${d.run}vh; --rd: ${d.rd}ms;`}
+    >
+      {d.run > 0 && (
+        <>
+          <span class="ps-run"></span>
+          <span class="ps-bulb"></span>
+        </>
+      )}
+    </i>
+  ))}
+</div>
+
+<style>
+  .paint-splatter {
+    position: absolute;
+    inset: 0;
+    /* Por delante del contenido (z-index 2) y por detrás del menú (100) y de
+       la brocha (200): la pintura está en el cristal, no en la página. */
+    z-index: 5;
+    pointer-events: none;
+    overflow: hidden;
+    filter: saturate(1.3);
+  }
+
+  /* ── El pintarrajo del impacto ────────────────────────────────────── */
+  .ps-wash {
+    position: absolute;
+    left: var(--cx); top: var(--cy);
+    width: 86vmin;
+    aspect-ratio: 1;
+    margin: -43vmin 0 0 -43vmin;
+    background: var(--rainbow);
+    border-radius: 46% 54% 38% 62% / 55% 42% 58% 45%;
+    filter: blur(18px) saturate(1.5);
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: psWash 1.1s var(--ease-out-soft) var(--hero-impact) both;
+  }
+  @keyframes psWash {
+    0%   { opacity: 0;   transform: scale(.18) rotate(-6deg); }
+    12%  { opacity: .72; transform: scale(1.1) rotate(2deg); }
+    38%  { opacity: .34; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0;   transform: scale(1.06); }
+  }
+
+  /* Destello del golpe: lo que "ciega" un instante al recibir el cubo. */
+  .ps-bloom {
+    position: absolute;
+    left: var(--cx); top: var(--cy);
+    width: 80vmax;
+    aspect-ratio: 1;
+    margin: -40vmax 0 0 -40vmax;
+    background: radial-gradient(circle, rgba(255,255,255,.6) 0%, rgba(255,255,255,.2) 24%, transparent 56%);
+    opacity: 0;
+    will-change: transform, opacity;
+    animation: psBloom 520ms var(--ease-out-soft) var(--hero-impact) both;
+  }
+  @keyframes psBloom {
+    0%   { opacity: 0;  transform: scale(.06); }
+    16%  { opacity: .85; }
+    100% { opacity: 0;  transform: scale(1); }
+  }
+
+  /* ── Las gotas ────────────────────────────────────────────────────── */
+  .ps-drop {
+    position: absolute;
+    left: var(--x); top: var(--y);
+    width: var(--s);
+    height: calc(var(--s) * .9);
+    margin: calc(var(--s) * -.45) 0 0 calc(var(--s) * -.5);
+    background: var(--c);
+    /* Radios desiguales en los dos ejes: una gota estampada no es un círculo. */
+    border-radius: 58% 42% 47% 53% / 52% 56% 44% 48%;
+    box-shadow:
+      inset 0 calc(var(--s) * -.13) calc(var(--s) * .24) rgba(0, 0, 0, .34),
+      0 calc(var(--s) * .07) calc(var(--s) * .16) rgba(0, 0, 0, .2);
+    opacity: 0;
+    will-change: transform, opacity;
+    /*
+      Una sola animación para las tres fases (reventar, aguantar, apagarse).
+      Con dos animaciones encadenadas sobre `opacity` la fase de espera pelea
+      con el relleno de la primera y la gota parpadea al empezar la segunda.
+    */
+    animation: psDrop 3.6s linear calc(var(--hero-impact) + var(--t)) both;
+  }
+  /* Brillo húmedo. Sin esto la gota es un círculo plano de color. */
+  .ps-drop::before {
+    content: '';
+    position: absolute;
+    left: 20%; top: 13%;
+    width: 34%; height: 27%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .62);
+  }
+
+  @keyframes psDrop {
+    0%   { opacity: 0; transform: scale(.15); }
+    4%   { opacity: 1; transform: scale(1.28); }
+    8%   {             transform: scale(.94); }
+    12%  {             transform: scale(1); }
+    55%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(1); }
+  }
+  .ps-drop.stay { animation-name: psDropStay; }
+  @keyframes psDropStay {
+    0%   { opacity: 0;   transform: scale(.15); }
+    4%   { opacity: 1;   transform: scale(1.28); }
+    8%   {               transform: scale(.94); }
+    12%  {               transform: scale(1); }
+    55%  { opacity: 1; }
+    100% { opacity: .17; transform: scale(1); }
+  }
+
+  /* ── El chorretón ─────────────────────────────────────────────────── */
+  .ps-run, .ps-bulb {
+    position: absolute;
+    background: var(--c);
+    /*
+      Arranca rápido y frena mucho: la pintura sale disparada por el golpe y
+      se queda sin impulso contra el cristal. Una curva lineal aquí parece un
+      cursor de carga bajando.
+    */
+    animation-duration: var(--rd);
+    animation-timing-function: cubic-bezier(.1, .62, .2, 1);
+    animation-delay: calc(var(--hero-impact) + var(--t) + 130ms);
+    animation-fill-mode: both;
+  }
+  .ps-run {
+    left: 50%; top: 38%;
+    width: calc(var(--s) * .4);
+    height: var(--run);
+    margin-left: calc(var(--s) * -.2);
+    border-radius: calc(var(--s) * .2) calc(var(--s) * .2) 0 0;
+    transform-origin: top;
+    animation-name: psRun;
+  }
+  @keyframes psRun {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+  }
+  /* La bola de la punta va aparte y sólo BAJA: si fuese parte del reguero, el
+     `scaleY` la estiraría hasta dejarla en un churro. */
+  .ps-bulb {
+    left: 50%; top: 38%;
+    width: calc(var(--s) * .6);
+    height: calc(var(--s) * .66);
+    margin-left: calc(var(--s) * -.3);
+    border-radius: 50% 50% 54% 46% / 42% 42% 58% 58%;
+    box-shadow: inset 0 calc(var(--s) * -.1) calc(var(--s) * .2) rgba(0, 0, 0, .3);
+    animation-name: psBulb;
+  }
+  @keyframes psBulb {
+    from { transform: translateY(0) scale(.5); }
+    to   { transform: translateY(var(--run)) scale(1); }
+  }
+
+  /* Nada de esto tiene sentido si se ha pedido menos movimiento. */
+  @media (prefers-reduced-motion: reduce) {
+    .paint-splatter { display: none; }
+  }
+</style>
