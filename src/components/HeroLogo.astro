@@ -11,6 +11,19 @@
  * (PaintSplatter.astro) y el temblor del contenido (Hero.astro). Los tres leen
  * `--hero-impact` de tokens.css: si se toca ahí, se mueven los tres a la vez.
  *
+ * ── Por qué no se encalla ─────────────────────────────────────────────────
+ * `animation-timing-function` en la regla se aplica a CADA tramo entre
+ * keyframes, no al conjunto. El aterrizaje tenía seis keyframes y una sola
+ * curva de rebote: el logotipo aceleraba y se paraba seis veces seguidas y
+ * parecía que se atascaba. Ahora cada keyframe declara su propia curva, así
+ * que la velocidad no se reinicia en cada tramo y el recorrido sale continuo.
+ *
+ * Y el logotipo NO llega a quedarse quieto entre el aterrizaje y la
+ * respiración: como van en cajas distintas, sus transformaciones se componen y
+ * la respiración entra por debajo mientras el aterrizaje aún se está
+ * asentando. Antes había 370 ms de logotipo congelado justo ahí, que era
+ * exactamente donde se notaba el parón.
+ *
  * ── Por qué hay tres cajas anidadas ───────────────────────────────────────
  * Porque son tres propiedades que se pisarían entre ellas si compartieran
  * elemento:
@@ -84,13 +97,16 @@ const logoMask = mask.src;
     filter: saturate(1.7) blur(9px);
     opacity: 0;
     will-change: transform, opacity;
-    animation: ltSplat 950ms var(--ease-overshoot) var(--hero-impact) both;
+    animation: ltSplat 1.5s linear var(--hero-impact) both;
   }
   @keyframes ltSplat {
-    0%   { opacity: 0;   transform: scale(.5) rotate(-7deg); }
-    12%  { opacity: .95; transform: scale(1.3) rotate(3deg); }
-    34%  { opacity: .7;  transform: scale(1.04) rotate(-1deg); }
-    100% { opacity: 0;   transform: scale(1.14) rotate(0deg); }
+    0%   { opacity: 0;   transform: rotate(-7deg) scale(.5);
+           animation-timing-function: cubic-bezier(.14, .9, .3, 1); }
+    11%  { opacity: .92; transform: rotate(3deg) scale3d(1.28, 1.14, 1);
+           animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
+    30%  { opacity: .66; transform: rotate(-1deg) scale(1.03);
+           animation-timing-function: cubic-bezier(.5, 0, .8, .6); }
+    100% { opacity: 0;   transform: rotate(0deg) scale(1.16); }
   }
 
   /* ── Sombras y reposo ─────────────────────────────────────────────── */
@@ -102,16 +118,25 @@ const logoMask = mask.src;
     filter:
       drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
       drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
-    animation: logoBreathe 7s ease-in-out 1.45s infinite;
+    /*
+      Entra ANTES de que termine el aterrizaje, a propósito. Como está en otra
+      caja, las dos transformaciones se multiplican en vez de pelearse: la
+      respiración va apareciendo por debajo mientras el logotipo todavía se
+      asienta, y no hay ni un fotograma de logotipo parado.
+    */
+    animation: logoBreathe 8s ease-in-out 820ms infinite;
     will-change: transform;
     backface-visibility: hidden;
   }
   /* Reposo: flota, se balancea un grado escaso y respira. Lo justo para que
      no parezca una imagen pegada, sin robarle atención al mensaje. */
+  /* Arranca y acaba en la postura NEUTRA, no en un ángulo. Empezando en
+     -0.7° el logotipo daba un tironcito al entrar la respiración. */
   @keyframes logoBreathe {
-    0%   { transform: translate3d(0, 0, 0)     rotate(-0.7deg) scale(1); }
-    50%  { transform: translate3d(0, -13px, 0) rotate(0.9deg)  scale(1.018); }
-    100% { transform: translate3d(0, 0, 0)     rotate(-0.7deg) scale(1); }
+    0%   { transform: translate3d(0, 0, 0)     rotate(0deg)     scale(1); }
+    30%  { transform: translate3d(0, -11px, 0) rotate(0.85deg)  scale(1.016); }
+    64%  { transform: translate3d(0, 4px, 0)   rotate(-0.65deg) scale(.996); }
+    100% { transform: translate3d(0, 0, 0)     rotate(0deg)     scale(1); }
   }
 
   /* ── El vuelo y el aterrizaje ─────────────────────────────────────── */
@@ -123,37 +148,50 @@ const logoMask = mask.src;
       nada. Al no tenerlo, no toca nada hasta que le llega su turno.
     */
     animation:
-      ltThrow var(--hero-impact) cubic-bezier(.62, .02, .84, .2) both,
-      ltLand 780ms var(--ease-overshoot) var(--hero-impact) forwards;
+      ltThrow var(--hero-impact) cubic-bezier(.5, .04, .76, .32) both,
+      ltLand 1.15s linear var(--hero-impact) forwards;
     will-change: transform;
     backface-visibility: hidden;
   }
   /* Viene de muy lejos y de muy abajo, girado: la trayectoria de algo lanzado
      con el brazo, no de algo que aparece. */
   @keyframes ltThrow {
-    0%   { opacity: 0; transform: translate3d(-14%, 46%, 0) scale(.06) rotate(-26deg); }
-    22%  { opacity: 1; }
-    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1.62) rotate(6deg); }
+    0%   { opacity: 0; transform: translate3d(-12%, 40%, 0) rotate(-22deg) scale(.09); }
+    26%  { opacity: 1; }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(5deg) scale(1.34); }
   }
-  /* El golpe: se aplasta contra el cristal y tarda tres rebotes en quedarse. */
+  /*
+    El golpe. Es pintura, no un cristal: al chocar se APLASTA (ancho de más,
+    alto de menos) y al rebotar se ESTIRA. Ese aplastamiento es lo que hace
+    que se lea como una masa blanda y no como una imagen a la que le suben el
+    zoom, y es lo que le da la soltura.
+
+    Cada keyframe lleva su curva: si se pone una sola en la regla, se aplica a
+    cada tramo y el logotipo se para cinco veces por el camino.
+  */
   @keyframes ltLand {
-    0%   { transform: scale(1.62) rotate(6deg); }
-    16%  { transform: scale(.84) rotate(-3.5deg); }
-    38%  { transform: scale(1.09) rotate(2deg); }
-    62%  { transform: scale(.968) rotate(-1deg); }
-    82%  { transform: scale(1.014) rotate(.4deg); }
-    100% { transform: scale(1) rotate(0deg); }
+    0%   { transform: rotate(5deg) scale(1.34);
+           animation-timing-function: cubic-bezier(.2, .74, .3, 1); }
+    13%  { transform: rotate(-2.2deg) scale3d(1.26, .82, 1);
+           animation-timing-function: cubic-bezier(.34, 0, .28, 1); }
+    31%  { transform: rotate(1.4deg) scale3d(.94, 1.13, 1);
+           animation-timing-function: cubic-bezier(.38, 0, .3, 1); }
+    52%  { transform: rotate(-.7deg) scale3d(1.05, .96, 1);
+           animation-timing-function: cubic-bezier(.4, 0, .32, 1); }
+    74%  { transform: rotate(.3deg) scale3d(.985, 1.02, 1);
+           animation-timing-function: cubic-bezier(.42, 0, .36, 1); }
+    100% { transform: rotate(0deg) scale(1); }
   }
 
   /* ── Desenfoque de movimiento ─────────────────────────────────────── */
   /* Lo que hace que se lea como velocidad y no como un zoom. Se resuelve justo
      en el impacto: el logotipo "enfoca" al chocar. */
   .lt-blur {
-    animation: ltBlur calc(var(--hero-impact) + 60ms) ease-out both;
+    animation: ltBlur calc(var(--hero-impact) + 150ms) linear both;
   }
   @keyframes ltBlur {
-    0%   { filter: blur(14px); }
-    70%  { filter: blur(4px); }
+    0%   { filter: blur(16px); animation-timing-function: cubic-bezier(.5, 0, .8, .5); }
+    62%  { filter: blur(6px);  animation-timing-function: cubic-bezier(.3, 0, .2, 1); }
     100% { filter: blur(0); }
   }
 
@@ -199,7 +237,7 @@ const logoMask = mask.src;
     transform: translate3d(0, 0, 0);
     /* Empieza cuando el logotipo ya se ha asentado: si no, el reflejo barre
        una forma que todavía está rebotando y no se lee. */
-    animation: logoGloss 7s ease-in-out 2.1s infinite;
+    animation: logoGloss 8s ease-in-out 2.6s infinite;
   }
   @keyframes logoGloss {
     0%        { transform: translate3d(0, 0, 0); }
@@ -210,9 +248,10 @@ const logoMask = mask.src;
     /* En pantallas pequeñas el mismo recorrido se ve exagerado: se acorta. */
     .hero-gs-inner { animation-name: logoBreatheSm; }
     @keyframes logoBreatheSm {
-      0%   { transform: translate3d(0, 0, 0)    rotate(-0.5deg) scale(1); }
-      50%  { transform: translate3d(0, -8px, 0) rotate(0.6deg)  scale(1.014); }
-      100% { transform: translate3d(0, 0, 0)    rotate(-0.5deg) scale(1); }
+      0%   { transform: translate3d(0, 0, 0)   rotate(0deg)    scale(1); }
+      30%  { transform: translate3d(0, -7px, 0) rotate(0.55deg) scale(1.012); }
+      64%  { transform: translate3d(0, 3px, 0)  rotate(-0.4deg) scale(.997); }
+      100% { transform: translate3d(0, 0, 0)   rotate(0deg)    scale(1); }
     }
   }
 

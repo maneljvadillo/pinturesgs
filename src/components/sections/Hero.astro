@@ -169,15 +169,27 @@ import BrushCursor from '~/components/BrushCursor.astro';
       El temblor arranca en `--hero-impact`, el mismo instante que usan el
       logotipo y la salpicadura.
     */
-    animation: heroJolt 440ms cubic-bezier(.2, .7, .3, 1) var(--hero-impact) both;
+    animation: heroJolt 620ms linear var(--hero-impact) both;
   }
-  /* Amplitud decreciente: un golpe se amortigua, no oscila igual todo el rato. */
+  /*
+    Amplitud decreciente: un golpe se amortigua, no oscila igual todo el rato.
+    La curva va DENTRO de cada keyframe. Puesta en la regla se aplica a cada
+    tramo por separado, y entonces el temblor se para en seco cinco veces en
+    lugar de amortiguarse: es lo que hacía que el arranque pareciera forzado.
+
+    Amplitud corta (6 px) a propósito: se tiene que notar el golpe, no marear.
+  */
   @keyframes heroJolt {
-    0%   { transform: translate3d(0, 0, 0); }
-    12%  { transform: translate3d(-9px, 6px, 0) rotate(-.4deg); }
-    30%  { transform: translate3d(6px, -5px, 0) rotate(.28deg); }
-    50%  { transform: translate3d(-4px, 3px, 0) rotate(-.15deg); }
-    72%  { transform: translate3d(2px, -1px, 0) rotate(.06deg); }
+    0%   { transform: translate3d(0, 0, 0);
+           animation-timing-function: cubic-bezier(.2, .9, .35, 1); }
+    13%  { transform: translate3d(-6px, 4px, 0) rotate(-.26deg);
+           animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
+    36%  { transform: translate3d(4px, -3px, 0) rotate(.17deg);
+           animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
+    62%  { transform: translate3d(-2px, 1.5px, 0) rotate(-.08deg);
+           animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
+    84%  { transform: translate3d(1px, -.5px, 0) rotate(.03deg);
+           animation-timing-function: cubic-bezier(.4, 0, .4, 1); }
     100% { transform: translate3d(0, 0, 0) rotate(0deg); }
   }
 
