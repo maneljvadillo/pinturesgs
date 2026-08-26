@@ -125,19 +125,37 @@ import BrushCursor from '~/components/BrushCursor.astro';
     */
     will-change: transform;
     backface-visibility: hidden;
-    animation: colorDrift 8s ease-in-out infinite alternate;
+    /*
+      Arranca DESPUÉS de la entrada del logotipo, no a la vez.
+
+      Esta capa mide 1958x1224, lleva veintiocho degradados radiales y tres
+      filtros encima, y su deriva no para nunca. Moviéndose durante el
+      lanzamiento se comía el hilo principal justo en el segundo y medio que
+      tiene que ir fino, y además está tapada por la capa blanca: hasta que
+      alguien pasa la brocha por encima no se ve un solo píxel de ella.
+
+      El relleno `backwards` es imprescindible: sin él, durante la espera no
+      habría transformación y al arrancar daría un salto del 5%.
+    */
+    animation: colorDrift 8s ease-in-out 1.6s infinite alternate backwards;
   }
   @keyframes colorDrift {
     0%   { transform: translate3d(-5%, -3.5%, 0) scale(1.04); }
     100% { transform: translate3d(5%, 3.5%, 0) scale(1.16); }
   }
-  /* Trama diagonal muy sutil: da textura de pintura en vez de degradado liso. */
+  /*
+    Trama diagonal muy sutil: da textura de pintura en vez de degradado liso.
+
+    Sin `mix-blend-mode: overlay`. Un modo de fusión sobre una superficie de
+    casi dos millones de píxeles obliga a rasterizar el fondo y mezclarlo a
+    mano, y esta capa está animada. La trama en blanco directo hace el mismo
+    papel aquí, porque debajo siempre hay color saturado.
+  */
   .hero-color-layer::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.07) 0 2px, transparent 2px 6px);
-    mix-blend-mode: overlay;
+    background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.1) 0 2px, transparent 2px 6px);
   }
 
   /* ── Capa 1: la capa blanca que se borra ──────────────────────────── */
@@ -257,13 +275,23 @@ import BrushCursor from '~/components/BrushCursor.astro';
     content: '';
     width: 1px; height: 28px;
     background: var(--stone-light);
+    transform-origin: top;
     animation: scrolldrop 2s ease-in-out infinite;
   }
+  /*
+    Sólo `transform`. Antes esto conmutaba `transform-origin` a mitad de
+    recorrido para que la línea se retirase por abajo, y `transform-origin` no
+    se puede componer: obliga a pasar por el hilo principal en cada fotograma,
+    para siempre, empezando en el mismo instante que la entrada del logotipo.
+
+    El mismo efecto sale con el origen fijo arriba: al final la línea baja un
+    alto entero mientras se encoge a cero, que es lo mismo que verla salir por
+    el pie.
+  */
   @keyframes scrolldrop {
-    0%   { transform: scaleY(0); transform-origin: top; }
-    50%  { transform: scaleY(1); transform-origin: top; }
-    51%  { transform-origin: bottom; }
-    100% { transform: scaleY(0); transform-origin: bottom; }
+    0%   { transform: translateY(0) scaleY(0); }
+    50%  { transform: translateY(0) scaleY(1); }
+    100% { transform: translateY(100%) scaleY(0); }
   }
 </style>
 

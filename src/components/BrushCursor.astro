@@ -163,11 +163,20 @@
   }
   .brush-cursor.press svg { transform: scale(.9); }
 
-  /* El color de la pintura gira entero en 3,6 s. El filtro va SÓLO sobre la
-     pintura: la madera, el metal y las cerdas se quedan con su color. */
+  /*
+    El color de la pintura gira entero en 3,6 s. El filtro va SÓLO sobre la
+    pintura: la madera, el metal y las cerdas se quedan con su color.
+
+    Y en pausa mientras la brocha no se ve. Es una animación de `filter`, que
+    no se puede componer y pasa por el hilo principal en cada fotograma; sin
+    esto estaba girando desde que carga la página —invisible— justo durante la
+    entrada del logotipo, que es el segundo y medio que tiene que ir fino.
+  */
   .bc-paint {
     animation: brushHue 3.6s linear infinite;
+    animation-play-state: paused;
   }
+  .brush-cursor.show .bc-paint { animation-play-state: running; }
   @keyframes brushHue {
     from { filter: hue-rotate(0deg) saturate(1.35); }
     to   { filter: hue-rotate(360deg) saturate(1.35); }

@@ -24,18 +24,33 @@
  * asentando. Antes había 370 ms de logotipo congelado justo ahí, que era
  * exactamente donde se notaba el parón.
  *
- * ── Por qué hay tres cajas anidadas ───────────────────────────────────────
- * Porque son tres propiedades que se pisarían entre ellas si compartieran
- * elemento:
+ * ── Dónde va cada filtro, y por qué importa tanto ─────────────────────────
+ * Un `filter` se aplica al elemento Y A TODO LO QUE LLEVA DENTRO. Si algo de
+ * ese contenido se mueve, el navegador tiene que rehacer el filtro entero en
+ * cada fotograma.
  *
- *   .hero-gs-inner  las dos sombras (`filter`) y la respiración en reposo.
- *   .lt-motion      el vuelo y el aterrizaje (`transform`). Son dos
- *                   animaciones seguidas; en la misma caja que la
- *                   respiración, la respiración las cancelaría.
- *   .lt-blur        el desenfoque de movimiento (`filter`). Aquí y no en
- *                   `.hero-gs-inner` porque una keyframe de `filter` borra las
- *                   sombras al terminar: `filter` es una sola propiedad, no
- *                   una lista de capas independientes.
+ * Aquí estaba el atasco de verdad: las dos sombras vivían en `.hero-gs-inner`,
+ * que CONTIENE a la caja que se anima. Resultado: dos `drop-shadow` sobre un
+ * logotipo de 430 px recalculadas sesenta veces por segundo durante todo el
+ * aterrizaje. Y dentro había una tercera capa que animaba `blur()` sobre la
+ * misma imagen. Tres filtros anidados, uno de ellos cambiando de valor, sobre
+ * el elemento más grande de la pantalla.
+ *
+ * Ahora las sombras están en la IMAGEN, que es una hoja: su contenido no
+ * cambia nunca, así que el filtro se calcula una vez y las transformaciones de
+ * fuera sólo mueven ese resultado ya hecho. Eso el compositor lo hace en la
+ * GPU sin repintar nada. Y el desenfoque de movimiento se ha eliminado: era
+ * lo más caro de toda la secuencia y lo que menos aportaba.
+ *
+ * Por lo mismo, el brillo húmedo ya no usa `mix-blend-mode`: un modo de fusión
+ * obliga a rasterizar el fondo y mezclarlo a mano en cada fotograma, y estaba
+ * justo dentro de lo que se mueve.
+ *
+ * ── Las dos cajas ─────────────────────────────────────────────────────────
+ *   .hero-gs-inner  la respiración en reposo.
+ *   .lt-motion      el vuelo y el aterrizaje. En la misma caja que la
+ *                   respiración, ésta cancelaría a aquéllos; separadas, sus
+ *                   transformaciones se componen y pueden solaparse.
  */
 import { getImage } from 'astro:assets';
 import Logo from '~/components/Logo.astro';
@@ -65,10 +80,8 @@ const logoMask = mask.src;
 
   <div class="hero-gs-inner">
     <div class="lt-motion">
-      <div class="lt-blur">
-        <Logo width={520} eager alt={SITE.name} />
-        <span class="hero-gs-gloss" aria-hidden="true"><span class="gloss-band"></span></span>
-      </div>
+      <Logo width={520} eager alt={SITE.name} />
+      <span class="hero-gs-gloss" aria-hidden="true"><span class="gloss-band"></span></span>
     </div>
   </div>
 </div>
@@ -94,7 +107,7 @@ const logoMask = mask.src;
     mask-size: 100% 100%;
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
-    filter: saturate(1.7) blur(9px);
+    filter: saturate(1.7) blur(7px);
     opacity: 0;
     will-change: transform, opacity;
     animation: ltSplat 1.5s linear var(--hero-impact) both;
@@ -113,18 +126,15 @@ const logoMask = mask.src;
   .hero-gs-inner {
     position: relative;
     z-index: 1;
-    /* Dos sombras: una pegada al canto, que da grosor de pintura, y la de
-       siempre, amplia y suave, que lo separa del fondo. */
-    filter:
-      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
-      drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
+    /* SIN `filter` a propósito: ver la nota de arriba. Las sombras están en la
+       imagen, que es una hoja y no se repinta al moverse. */
     /*
       Entra ANTES de que termine el aterrizaje, a propósito. Como está en otra
       caja, las dos transformaciones se multiplican en vez de pelearse: la
       respiración va apareciendo por debajo mientras el logotipo todavía se
       asienta, y no hay ni un fotograma de logotipo parado.
     */
-    animation: logoBreathe 8s ease-in-out 820ms infinite;
+    animation: logoBreathe 7s linear 620ms infinite;
     will-change: transform;
     backface-visibility: hidden;
   }
@@ -132,10 +142,19 @@ const logoMask = mask.src;
      no parezca una imagen pegada, sin robarle atención al mensaje. */
   /* Arranca y acaba en la postura NEUTRA, no en un ángulo. Empezando en
      -0.7° el logotipo daba un tironcito al entrar la respiración. */
+  /*
+    Arranca y acaba en la postura NEUTRA, no en un ángulo: empezando en -0.7°
+    el logotipo daba un tironcito al entrar. Y el primer tramo sale con brío
+    (curva de salida rápida) en vez de desde parado, porque solapa con el final
+    del aterrizaje y tiene que recoger el movimiento, no cortarlo.
+  */
   @keyframes logoBreathe {
-    0%   { transform: translate3d(0, 0, 0)     rotate(0deg)     scale(1); }
-    30%  { transform: translate3d(0, -11px, 0) rotate(0.85deg)  scale(1.016); }
-    64%  { transform: translate3d(0, 4px, 0)   rotate(-0.65deg) scale(.996); }
+    0%   { transform: translate3d(0, 0, 0)     rotate(0deg)     scale(1);
+           animation-timing-function: cubic-bezier(.22, .55, .4, 1); }
+    30%  { transform: translate3d(0, -11px, 0) rotate(0.85deg)  scale(1.016);
+           animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
+    64%  { transform: translate3d(0, 4px, 0)   rotate(-0.65deg) scale(.996);
+           animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
     100% { transform: translate3d(0, 0, 0)     rotate(0deg)     scale(1); }
   }
 
@@ -148,59 +167,70 @@ const logoMask = mask.src;
       nada. Al no tenerlo, no toca nada hasta que le llega su turno.
     */
     animation:
-      ltThrow var(--hero-impact) cubic-bezier(.5, .04, .76, .32) both,
-      ltLand 1.15s linear var(--hero-impact) forwards;
+      ltThrow var(--hero-impact) cubic-bezier(.4, .05, .5, .75) both,
+      ltLand 620ms linear var(--hero-impact) forwards;
     will-change: transform;
     backface-visibility: hidden;
   }
   /* Viene de muy lejos y de muy abajo, girado: la trayectoria de algo lanzado
      con el brazo, no de algo que aparece. */
-  @keyframes ltThrow {
-    0%   { opacity: 0; transform: translate3d(-12%, 40%, 0) rotate(-22deg) scale(.09); }
-    26%  { opacity: 1; }
-    100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(5deg) scale(1.34); }
-  }
   /*
-    El golpe. Es pintura, no un cristal: al chocar se APLASTA (ancho de más,
-    alto de menos) y al rebotar se ESTIRA. Ese aplastamiento es lo que hace
-    que se lea como una masa blanda y no como una imagen a la que le suben el
-    zoom, y es lo que le da la soltura.
+    ── La clave de que salga fino ────────────────────────────────────────
+    El vuelo y el aterrizaje son DOS animaciones, pero tienen que leerse como
+    UN solo movimiento que frena. Para eso la velocidad no puede caer de golpe
+    al pasar de una a otra.
 
-    Cada keyframe lleva su curva: si se pone una sola en la regla, se aplica a
-    cada tramo y el logotipo se para cinco veces por el camino.
+    Antes el vuelo terminaba acelerando a tope: 79 px de crecimiento por
+    fotograma, y el aterrizaje sólo tenía 86 px de recorrido por delante. La
+    velocidad se desplomaba a 8 en cuatro fotogramas y luego iba dando saltos
+    de 63 a 0,6 y vuelta. Eso, visto, es un logotipo que se atasca.
+
+    Ahora el vuelo YA VIENE frenando al llegar (la curva sale con pendiente
+    baja) y el aterrizaje entra con pendiente alta para recoger esa velocidad.
+    El resultado es una sola curva de frenada de principio a fin.
+
+    Y el aterrizaje ya no rebota: la escala en X baja siempre, sin volver
+    atrás (1.14 → 1.075 → 1.004 → 1). Un rebote obliga a la velocidad a pasar
+    por cero en cada cambio de sentido, y cada uno de esos ceros es un
+    tironcito. El golpe lo cuentan la salpicadura y el temblor de la pantalla;
+    el logotipo sólo tiene que aterrizar bien.
+
+    Queda un asentamiento mínimo en la Y (1.005 → 1.018) que hace que la masa
+    "recupere altura" al posarse. Es una centésima: no se lee como rebote,
+    se lee como peso.
   */
+  @keyframes ltThrow {
+    0%   { opacity: 0; transform: translate3d(-7%, 22%, 0) rotate(-11deg) scale(.26); }
+    30%  { opacity: 1; }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(3deg) scale(1.14); }
+  }
   @keyframes ltLand {
-    0%   { transform: rotate(5deg) scale(1.34);
-           animation-timing-function: cubic-bezier(.2, .74, .3, 1); }
-    13%  { transform: rotate(-2.2deg) scale3d(1.26, .82, 1);
-           animation-timing-function: cubic-bezier(.34, 0, .28, 1); }
-    31%  { transform: rotate(1.4deg) scale3d(.94, 1.13, 1);
-           animation-timing-function: cubic-bezier(.38, 0, .3, 1); }
-    52%  { transform: rotate(-.7deg) scale3d(1.05, .96, 1);
-           animation-timing-function: cubic-bezier(.4, 0, .32, 1); }
-    74%  { transform: rotate(.3deg) scale3d(.985, 1.02, 1);
-           animation-timing-function: cubic-bezier(.42, 0, .36, 1); }
-    100% { transform: rotate(0deg) scale(1); }
+    0%   { transform: rotate(3deg) scale3d(1.14, 1.14, 1);
+           animation-timing-function: cubic-bezier(.06, .28, .3, 1); }
+    26%  { transform: rotate(.9deg) scale3d(1.075, 1.005, 1);
+           animation-timing-function: cubic-bezier(.3, .2, .32, 1); }
+    60%  { transform: rotate(-.35deg) scale3d(1.004, 1.018, 1);
+           animation-timing-function: cubic-bezier(.34, .12, .36, 1); }
+    100% { transform: rotate(0deg) scale3d(1, 1, 1); }
   }
 
-  /* ── Desenfoque de movimiento ─────────────────────────────────────── */
-  /* Lo que hace que se lea como velocidad y no como un zoom. Se resuelve justo
-     en el impacto: el logotipo "enfoca" al chocar. */
-  .lt-blur {
-    animation: ltBlur calc(var(--hero-impact) + 150ms) linear both;
-  }
-  @keyframes ltBlur {
-    0%   { filter: blur(16px); animation-timing-function: cubic-bezier(.5, 0, .8, .5); }
-    62%  { filter: blur(6px);  animation-timing-function: cubic-bezier(.3, 0, .2, 1); }
-    100% { filter: blur(0); }
-  }
+
 
   /* Realce de color del logotipo: más pigmento, sin tocar el archivo. */
   .logo-throw :global(img) {
     width: 100%;
     height: auto;
     display: block;
-    filter: saturate(1.4) contrast(1.1);
+    /*
+      Realce de color Y las dos sombras, en un solo filtro y sobre la hoja.
+      Una sombra pegada al canto, que da grosor de pintura, y otra amplia y
+      suave, que lo separa del fondo. Al estar aquí y no en un ancestro, se
+      calculan una vez: lo que se mueve por fuera ya es el resultado.
+    */
+    filter:
+      saturate(1.4) contrast(1.1)
+      drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
+      drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
   }
 
   /*
@@ -213,7 +243,9 @@ const logoMask = mask.src;
     inset: 0;
     overflow: hidden;
     pointer-events: none;
-    mix-blend-mode: screen;
+    /* Sin `mix-blend-mode`: obliga a mezclar con el fondo en cada fotograma y
+       está dentro de lo que se mueve. Una banda blanca translúcida da lo
+       mismo aquí, porque debajo hay pintura saturada. */
     -webkit-mask-image: var(--logo-mask);
     mask-image: var(--logo-mask);
     -webkit-mask-size: 100% 100%;
@@ -229,15 +261,15 @@ const logoMask = mask.src;
     background: linear-gradient(
       100deg,
       transparent 0%,
-      rgba(255, 255, 255, 0.10) 35%,
-      rgba(255, 255, 255, 0.55) 50%,
-      rgba(255, 255, 255, 0.10) 65%,
+      rgba(255, 255, 255, 0.08) 35%,
+      rgba(255, 255, 255, 0.42) 50%,
+      rgba(255, 255, 255, 0.08) 65%,
       transparent 100%
     );
     transform: translate3d(0, 0, 0);
     /* Empieza cuando el logotipo ya se ha asentado: si no, el reflejo barre
        una forma que todavía está rebotando y no se lee. */
-    animation: logoGloss 8s ease-in-out 2.6s infinite;
+    animation: logoGloss 7s ease-in-out 2.2s infinite;
   }
   @keyframes logoGloss {
     0%        { transform: translate3d(0, 0, 0); }
@@ -248,21 +280,19 @@ const logoMask = mask.src;
     /* En pantallas pequeñas el mismo recorrido se ve exagerado: se acorta. */
     .hero-gs-inner { animation-name: logoBreatheSm; }
     @keyframes logoBreatheSm {
-      0%   { transform: translate3d(0, 0, 0)   rotate(0deg)    scale(1); }
-      30%  { transform: translate3d(0, -7px, 0) rotate(0.55deg) scale(1.012); }
-      64%  { transform: translate3d(0, 3px, 0)  rotate(-0.4deg) scale(.997); }
-      100% { transform: translate3d(0, 0, 0)   rotate(0deg)    scale(1); }
+      0%   { transform: translate3d(0, 0, 0)    rotate(0deg)    scale(1);
+             animation-timing-function: cubic-bezier(.22, .55, .4, 1); }
+      30%  { transform: translate3d(0, -7px, 0) rotate(0.55deg) scale(1.012);
+             animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
+      64%  { transform: translate3d(0, 3px, 0)  rotate(-0.4deg) scale(.997);
+             animation-timing-function: cubic-bezier(.45, 0, .55, 1); }
+      100% { transform: translate3d(0, 0, 0)    rotate(0deg)    scale(1); }
     }
   }
 
   /* Con movimiento reducido no se lanza nada: el logotipo ya está puesto. */
   @media (prefers-reduced-motion: reduce) {
     .lt-splat, .hero-gs-gloss { display: none; }
-    .hero-gs-inner, .lt-motion, .lt-blur { animation: none; opacity: 1; transform: none; filter: none; }
-    .hero-gs-inner {
-      filter:
-        drop-shadow(0 2px 1px rgba(0, 0, 0, 0.18))
-        drop-shadow(0 20px 50px rgba(0, 0, 0, 0.22));
-    }
+    .hero-gs-inner, .lt-motion { animation: none; opacity: 1; transform: none; }
   }
 </style>
