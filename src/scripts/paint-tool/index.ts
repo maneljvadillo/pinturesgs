@@ -15,7 +15,6 @@
  * y borrar la retira. Para dos colores distintos hacen falta dos zonas.
  */
 import { showToast } from '~/scripts/toast';
-import { DESIGN_KEY } from '~/lib/budget';
 import { colorName } from '~/data/palette';
 import type { FractionRect, Region, ToolName } from './types';
 import { History, cloneForWrite } from './history';
@@ -259,7 +258,6 @@ export async function initPaintTool(): Promise<void> {
     rebuildIdMap();
     renderWallPicker();
     render();
-    syncDesignSummary();
   }
 
   // ── Pintar ──────────────────────────────────────────────────────────────
@@ -312,7 +310,6 @@ export async function initPaintTool(): Promise<void> {
     history.push(regions, selectedId);
     renderWallPicker();
     render();
-    syncDesignSummary();
   }
 
   // ── Selector de zonas ───────────────────────────────────────────────────
@@ -378,7 +375,6 @@ export async function initPaintTool(): Promise<void> {
     history.push(regions, selectedId);
     renderWallPicker();
     render();
-    syncDesignSummary();
     showToast('Zona marcada — elige un color en la paleta.');
   }
 
@@ -492,7 +488,6 @@ export async function initPaintTool(): Promise<void> {
       history.push(regions, selectedId);
       renderWallPicker();
       render();
-      syncDesignSummary();
       return;
     }
 
@@ -552,7 +547,6 @@ export async function initPaintTool(): Promise<void> {
       lastPoint = null;
       history.push(regions, selectedId);
       renderWallPicker();
-      syncDesignSummary();
     }
   }
   regionLayer.addEventListener('pointerup', endPointer);
@@ -593,7 +587,6 @@ export async function initPaintTool(): Promise<void> {
     history.reset(regions, selectedId);
     renderWallPicker();
     render();
-    syncDesignSummary();
     showToast('Todo vuelve a su color original');
   });
 
@@ -670,7 +663,6 @@ export async function initPaintTool(): Promise<void> {
     history.push(regions, selectedId);
     renderWallPicker();
     render();
-    syncDesignSummary();
     showToast(`Combinación ${btn.dataset.name} aplicada — puedes retocar cada pared.`);
   }
 
@@ -698,40 +690,6 @@ export async function initPaintTool(): Promise<void> {
   }
   compareRange.addEventListener('input', () => setCompare(Number(compareRange.value)));
   setCompare(50);
-
-
-  // ── Traspaso al formulario ──────────────────────────────────────────────
-  function describeDesign(): string {
-    const painted = regions.filter((r) => r.color);
-    if (painted.length === 0) return 'sin cambios todavía';
-    return painted.map((r) => `${r.label}: ${colorName(r.color!)} (${r.color!.toUpperCase()})`).join(' · ');
-  }
-
-  /*
-    El formulario ya no está en esta página, así que el resumen del diseño se
-    deja en `sessionStorage` en cuanto cambia y lo recoge el formulario al
-    cargar. Se guarda aquí, y no al pulsar un botón concreto, porque a
-    presupuesto se puede ir por varios sitios (la cabecera, el pie, el móvil):
-    colgarlo de un único CTA hacía que por los demás se perdiera el diseño.
-    `sessionStorage` y no la URL: el resumen puede ser largo y no tiene por qué
-    ir a la vista en la barra de direcciones.
-  */
-  function syncDesignSummary(): void {
-    const chip = document.getElementById('formContextChip');
-    const input = document.getElementById('disenoInput') as HTMLInputElement | null;
-    const summary = describeDesign();
-    const painted = regions.some((r) => r.color);
-    if (input) input.value = painted ? summary : '';
-    if (chip) chip.textContent = `🎨 Tu diseño: ${summary}`;
-
-    try {
-      if (painted) sessionStorage.setItem(DESIGN_KEY, summary);
-      else sessionStorage.removeItem(DESIGN_KEY);
-    } catch {
-      /* Modo privado o almacenamiento lleno: el formulario funciona igual. */
-    }
-  }
-
 
   // ── Arranque ────────────────────────────────────────────────────────────
   seed();

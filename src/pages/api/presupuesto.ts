@@ -10,6 +10,7 @@
 import type { APIRoute } from 'astro';
 import { budgetSchema, fieldErrors } from '~/server/schema';
 import { getMailer, mailerIsLive, type Attachment } from '~/server/mailer';
+import { CONTACT } from '~/data/site';
 import { renderHtml, renderText } from '~/server/render-email';
 import { ACCEPTED_TYPES, MAX_FILES, MAX_TOTAL_BYTES, formatBytes } from '~/lib/budget';
 
@@ -62,7 +63,6 @@ export const POST: APIRoute = async ({ request }) => {
     tipo: form.get('tipo') ?? '',
     ubicacion: form.get('ubicacion') ?? '',
     descripcion: form.get('descripcion') ?? '',
-    diseno: form.get('diseno') ?? '',
   });
   if (!parsed.success) {
     return fail('Revisa los campos marcados.', 422, fieldErrors(parsed.error));
@@ -100,6 +100,24 @@ export const POST: APIRoute = async ({ request }) => {
     adjuntos: attachments.length,
   };
 
+  /*
+    En producción, sin proveedor de correo configurado NO se le dice al
+    visitante que su solicitud ha llegado. El mailer de desarrollo escribe el
+    aviso por consola y devuelve éxito, así que sin esta comprobación la web
+    respondería "¡Recibido!" a un cliente cuya petición no ha visto nadie: se
+    perderían clientes en silencio, que es peor que un formulario que falla.
+
+    En desarrollo se deja pasar, que es justo para lo que existe ese mailer.
+  */
+  if (import.meta.env.PROD && !mailerIsLive()) {
+    console.error('[presupuesto] RESEND_API_KEY sin configurar en producción: no se puede entregar la solicitud.');
+    return fail(
+      `No hemos podido enviar tu solicitud. Escríbenos directamente a ${CONTACT.email.value}` +
+        (CONTACT.whatsapp.pending ? '.' : ' o por WhatsApp.'),
+      503,
+    );
+  }
+
   try {
     await getMailer().send({
       subject: `Presupuesto · ${data.tipo} · ${data.nombre}`,
@@ -112,7 +130,7 @@ export const POST: APIRoute = async ({ request }) => {
     // El error real se queda en el log del servidor, no se le enseña al visitante.
     console.error('[presupuesto] fallo al enviar el aviso:', err);
     return fail(
-      'No hemos podido enviar tu solicitud. Vuelve a intentarlo en unos minutos o escríbenos directamente.',
+      `No hemos podido enviar tu solicitud. Vuelve a intentarlo en unos minutos o escríbenos a ${CONTACT.email.value}.`,
       502,
     );
   }

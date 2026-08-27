@@ -23,7 +23,6 @@
  */
 
 export type Service = {
-  emoji: string;
   name: string;
   /** Subfaenas concretas. Las 3 primeras se ven siempre; el resto tras "+N ver más". */
   tasks: string[];
@@ -35,55 +34,46 @@ export const VISIBLE_TAGS = 3;
 
 export const SERVICES: Service[] = [
   {
-    emoji: '🏠',
     name: 'Hogar',
     tasks: ['Pintura en general', 'Viviendas', 'Apartamentos', 'Comunidades de propietarios', 'Dormitorios', 'Salones', 'Cocinas'],
     photo: 'servicio-hogar',
   },
   {
-    emoji: '🏢',
     name: 'Negocios',
     tasks: ['Oficinas', 'Locales comerciales', 'Reformas', 'Pintura decorativa comercial'],
     photo: 'servicio-negocios',
   },
   {
-    emoji: '🏗️',
     name: 'Exteriores',
     tasks: ['Fachadas', 'Edificios', 'Comunidades', 'Revestimientos exteriores'],
     photo: 'servicio-exteriores',
   },
   {
-    emoji: '🚗',
     name: 'Parkings',
     tasks: ['Parkings', 'Garajes', 'Señalización de parkings', 'Protección de suelos'],
     photo: 'servicio-parkings',
   },
   {
-    emoji: '🧗',
     name: 'Altura',
     tasks: ['Trabajos verticales', 'Fachadas altas', 'Estructuras en altura', 'Cubiertas y tejados'],
     photo: 'servicio-altura',
   },
   {
-    emoji: '🔩',
     name: 'Metal',
     tasks: ['Estructuras metálicas', 'Puertas metálicas', 'Protección anticorrosión', 'Naves industriales'],
     photo: 'servicio-metal',
   },
   {
-    emoji: '🪵',
     name: 'Madera',
     tasks: ['Mantenimiento de madera', 'Barnices', 'Lacados', 'Puertas de madera', 'Muebles y carpintería'],
     photo: 'servicio-madera',
   },
   {
-    emoji: '🎨',
     name: 'Acabados',
     tasks: ['Pintura decorativa', 'Microcemento', 'Papel pintado', 'Acabados especiales', 'Texturas decorativas', 'Estucados', 'Efectos decorativos'],
     photo: 'servicio-acabados',
   },
   {
-    emoji: '🏭',
     name: 'Industrial',
     tasks: ['Grandes proyectos', 'Naves industriales', 'Constructoras', 'Instalaciones industriales'],
     photo: 'servicio-industrial',

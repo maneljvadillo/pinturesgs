@@ -44,8 +44,6 @@ export const budgetSchema = z.object({
   ubicacion: trimmed.max(LIMITS.ubicacion.max, 'La ubicación es demasiado larga.').optional().default(''),
   descripcion: trimmed.max(LIMITS.descripcion.max, 'La descripción es demasiado larga.').optional().default(''),
 
-  /** Resumen del diseño hecho en "Pinta el teu espai". Opcional. */
-  diseno: trimmed.max(LIMITS.diseno.max).optional().default(''),
 });
 
 export type BudgetInput = z.infer<typeof budgetSchema>;

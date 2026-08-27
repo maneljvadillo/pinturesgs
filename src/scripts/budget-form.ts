@@ -8,7 +8,7 @@
 import { showToast } from '~/scripts/toast';
 import {
   MAX_FILES, MAX_TOTAL_BYTES, ACCEPTED_TYPES, LIMITS,
-  EMAIL_RE, formatBytes, DESIGN_KEY, normalizePhone, displayPhone,
+  EMAIL_RE, formatBytes, normalizePhone, displayPhone,
 } from '~/lib/budget';
 
 type Rule = (value: string) => string | null;
@@ -49,26 +49,6 @@ export function initBudgetForm(): void {
   // Marca cuándo se pintó el formulario: un envío instantáneo delata un bot.
   renderedAt.value = String(Date.now());
 
-  /*
-    Si el visitante viene de "Pinta el teu espai", su diseño llega por
-    `sessionStorage`. Se recoge una sola vez: si vuelve al formulario más tarde
-    sin pasar por la herramienta, no debe aparecer un diseño viejo.
-  */
-  try {
-    const design = sessionStorage.getItem(DESIGN_KEY);
-    if (design) {
-      const input = document.getElementById('disenoInput') as HTMLInputElement | null;
-      const chip = document.getElementById('formContextChip');
-      if (input) input.value = design;
-      if (chip) {
-        chip.textContent = `🎨 Tu diseño: ${design}`;
-        chip.classList.add('show');
-      }
-      sessionStorage.removeItem(DESIGN_KEY);
-    }
-  } catch {
-    /* Sin almacenamiento (modo privado): el formulario funciona igual. */
-  }
 
   // ── Validación por campo ──────────────────────────────────────────────
   const fieldOf = (name: string) =>
@@ -186,8 +166,6 @@ export function initBudgetForm(): void {
     ];
     if (val('ubicacion')) lineas.push(`Ubicación: ${val('ubicacion')}`);
     if (val('descripcion')) lineas.push(``, val('descripcion'));
-    const diseno = (document.getElementById('disenoInput') as HTMLInputElement | null)?.value;
-    if (diseno) lineas.push(``, `Mi diseño: ${diseno}`);
     if (nFotos > 0) {
       lineas.push(``, `(Tengo ${nFotos} ${nFotos === 1 ? 'foto' : 'fotos'} para enseñaros; os las paso por aquí.)`);
     }
@@ -243,7 +221,6 @@ export function initBudgetForm(): void {
 
       form.reset();
       describeFiles(null);
-      document.getElementById('formContextChip')?.classList.remove('show');
       statusEl.className = 'form-status full ok';
       statusEl.textContent = data.message ?? '¡Recibido! Te responderemos lo antes posible.';
       showToast('Solicitud enviada. Gracias.');

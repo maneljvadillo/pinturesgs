@@ -3,17 +3,20 @@
  * TESTIMONIOS — marcados explícitamente como ejemplo mientras no haya reseñas
  * reales. No se publica como opinión de un cliente algo que nadie ha dicho.
  *
- * ── Dos formas según la pantalla ──────────────────────────────────────────
- *   ESCRITORIO   rejilla de tres columnas: se leen todas de un vistazo.
- *   MÓVIL        carrusel horizontal con flechas.
+ * ── Carrusel en TODAS las pantallas ───────────────────────────────────────
+ *   ESCRITORIO   se ven TRES a la vez; el resto se traen con las flechas.
+ *   MÓVIL        se ve una, y la siguiente asoma por el borde.
  *
- * Apiladas en una sola columna, ocho testimonios eran ocho pantallazos de
- * scroll seguidos, y nadie baja hasta el octavo: la sección se convertía en un
- * muro que hay que pasar para llegar al presupuesto. En horizontal se ve una y
- * se pasa a la siguiente sólo si apetece.
+ * Antes en escritorio era una rejilla con las ocho a la vista, y eso es un
+ * muro de texto que hay que pasar para llegar al presupuesto: nadie se lee
+ * ocho reseñas seguidas. Con tres a la vista se leen las tres, y quien quiera
+ * más las pide. Es la misma razón por la que en móvil ya era carrusel.
  *
  * El carrusel es CSS (`scroll-snap`), así que arrastrando funciona aunque el
- * JavaScript no llegue; las flechas las mueve testi-carousel.ts.
+ * JavaScript no llegue; las flechas las mueve testi-carousel.ts, que ya
+ * decidía solo si enseñarlas mirando si queda recorrido a cada lado — por eso
+ * pasar el escritorio a carrusel no ha necesitado tocar ni una línea de ese
+ * archivo.
  */
 import { TESTIMONIALS } from '~/data/testimonials';
 
@@ -71,14 +74,34 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
     background: #EFEDE7;
   }
 
+  .testi-viewport { position: relative; }
+
   .testi-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
     gap: 26px;
     margin-top: 50px;
     list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    /* Sin barra a la vista: ya lo cuentan las flechas y la tarjeta asomada. */
+    scrollbar-width: none;
+    /* En iOS el rebote horizontal dentro de la página marea; se corta. */
+    overscroll-behavior-x: contain;
+    /*
+      Aire arriba y abajo. Un contenedor que se desplaza en horizontal recorta
+      también en vertical (así lo define CSS: si un eje se desplaza, el otro
+      deja de ser visible), y sin este hueco se comerían el levantamiento y la
+      sombra de la tarjeta al pasar por encima.
+    */
+    padding: 8px 0 26px;
   }
-  .testi-viewport { position: relative; }
+  .testi-grid::-webkit-scrollbar { display: none; }
+
+  /* Tres a la vista, contando los dos huecos de 26 px que hay entre ellas. */
+  .testi-card {
+    flex: 0 0 calc((100% - 52px) / 3);
+    scroll-snap-align: start;
+  }
 
   /*
     ── MÓVIL: carrusel ─────────────────────────────────────────────────
@@ -94,23 +117,14 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
   */
   @media (max-width: 900px) {
     .testi-grid {
-      display: flex;
-      grid-template-columns: none;
       gap: 14px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
       scroll-padding: 0 8%;
-      padding: 4px 8% 10px;
+      padding: 4px 8% 14px;
       /* El carrusel se sale del ancho del `.wrap` a propósito: sangrar el
          contenedor y no las tarjetas es lo que permite que la siguiente se
          asome por el borde de la pantalla. */
       margin: 40px calc(var(--wrap-pad) * -1) 0;
-      /* Sin barra a la vista: ya lo cuentan las flechas y la tarjeta asomada. */
-      scrollbar-width: none;
-      /* En iOS el rebote horizontal dentro de la página marea; se corta. */
-      overscroll-behavior-x: contain;
     }
-    .testi-grid::-webkit-scrollbar { display: none; }
     .testi-card {
       flex: 0 0 84%;
       scroll-snap-align: center;
@@ -125,28 +139,39 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
     48 px de lado: por encima del mínimo de zona pulsable que pide la WCAG y
     del tamaño de un pulgar.
   */
-  .testi-arrow { display: none; }
+  .testi-arrow {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 1px solid var(--control-border);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--ink);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+    transition: background .2s ease, color .2s ease, transform .2s var(--ease-out-soft);
+  }
+  /* Se meten en el margen del `.wrap` para no taparle texto a la tarjeta. */
+  .testi-arrow.prev { left: -22px; }
+  .testi-arrow.next { right: -22px; }
+  .testi-arrow:hover { background: var(--ink); color: #fff; }
+  .testi-arrow:hover.prev { transform: translateY(-50%) translateX(-2px); }
+  .testi-arrow:hover.next { transform: translateY(-50%) translateX(2px); }
+  /* El script las esconde cuando no llevan a ninguna parte. */
+  .testi-arrow[hidden] { display: none; }
+
   @media (max-width: 900px) {
-    .testi-arrow {
-      display: grid;
-      place-items: center;
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 2;
-      width: 48px; height: 48px;
-      border-radius: 50%;
-      border: 1px solid var(--stone-light);
-      background: rgba(255, 255, 255, 0.94);
-      color: var(--ink);
-      font-size: 1.5rem;
-      line-height: 1;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
-    }
-    .testi-arrow[hidden] { display: none; }
+    /* En pantalla estrecha no hay margen donde meterlas: van sobre el borde. */
     .testi-arrow.prev { left: 2px; }
     .testi-arrow.next { right: 2px; }
+    .testi-arrow:hover { background: rgba(255, 255, 255, 0.96); color: var(--ink); }
+    .testi-arrow:hover.prev, .testi-arrow:hover.next { transform: translateY(-50%); }
     .testi-arrow:active { background: var(--ink); color: #fff; }
   }
 

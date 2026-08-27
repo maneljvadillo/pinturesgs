@@ -10,6 +10,13 @@
  * cliente algo que nadie ha dicho es publicidad engañosa (Directiva Ómnibus,
  * traspuesta en la Ley de Competencia Desleal). Por eso llevan el aviso, y por
  * eso el aviso sólo se quita reseña a reseña, cuando esa reseña sea real.
+ *
+ * SON SEIS, y no ocho. Se quitaron la de la nave industrial y la de trabajos
+ * en altura porque son justo dos de las categorías que NINGUNA fuente pública
+ * confirma que la empresa preste (ver la nota de services.ts): sostener una
+ * reseña sobre un servicio que aún está por confirmar era lo más frágil de
+ * las ocho. Las seis que quedan cubren seis parroquias distintas y cuatro de
+ * ellas caen en servicios sí confirmados.
  */
 
 export type Testimonial = {
@@ -52,20 +59,8 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     stars: 5,
-    text: 'Pidieron acceso a la nave un lunes y el viernes estaba la estructura metálica tratada y pintada. Presupuesto cerrado, sin sorpresas al final.',
-    author: 'Nave industrial — Sant Julià de Lòria',
-    sample: true,
-  },
-  {
-    stars: 5,
     text: 'Barnizaron las vigas y las contraventanas de madera de la casa. Lijaron a mano lo que hacía falta y respetaron la veta. Un trabajo de artesano.',
     author: 'Madera y barnices — Ordino',
-    sample: true,
-  },
-  {
-    stars: 5,
-    text: 'Trabajo en altura en el hueco de la escalera, que era lo que nadie quería tocar. Vinieron con el equipo homologado y lo resolvieron en dos días.',
-    author: 'Trabajos en altura — Canillo',
     sample: true,
   },
 ];

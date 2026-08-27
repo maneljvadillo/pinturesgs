@@ -17,7 +17,6 @@ export function renderText(d: BudgetInput, meta: Meta): string {
     ['Tipo de proyecto', d.tipo],
     ['Ubicación', d.ubicacion || '—'],
     ['Descripción', d.descripcion || '—'],
-    ['Diseño en la web', d.diseno || '—'],
     ['Fotografías', String(meta.adjuntos)],
     ['Recibido', meta.recibido],
   ];
@@ -57,7 +56,6 @@ export function renderHtml(d: BudgetInput, meta: Meta): string {
         ${row('Proyecto', d.tipo)}
         ${row('Ubicación', d.ubicacion)}
         ${row('Descripción', d.descripcion)}
-        ${d.diseno ? row('Diseño en la web', d.diseno, true) : ''}
         ${row('Fotografías', meta.adjuntos ? `${meta.adjuntos} adjunta(s)` : 'ninguna')}
         ${row('Recibido', meta.recibido)}
       </table>

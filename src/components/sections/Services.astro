@@ -1,6 +1,6 @@
 ---
 /**
- * SERVICIOS — 9 categorías con foto de fondo, emoji y sus subfaenas concretas
+ * SERVICIOS — 9 categorías con foto de fondo y sus subfaenas concretas
  * como etiquetas. Las etiquetas que no caben se pliegan tras un "+N ver más".
  *
  * Se renderiza en el servidor: el texto de los servicios es contenido real y
@@ -54,7 +54,6 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
             )}
 
             <span class="st-tint" aria-hidden="true"></span>
-            <span class="st-emoji" aria-hidden="true">{s.emoji}</span>
 
             <div class="st-content">
               <h3 class="st-name">{s.name}</h3>
@@ -173,24 +172,6 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
     filter: saturate(1.3);
   }
 
-  /* El icono va sobre una pastilla del color del servicio: da un punto de
-     color permanente arriba, no sólo al pasar el ratón. */
-  .st-emoji {
-    position: absolute;
-    top: 18px; left: 18px;
-    width: 46px; height: 46px;
-    display: grid;
-    place-items: center;
-    font-size: 1.45rem;
-    z-index: 3;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
-    transition: transform .4s var(--ease-overshoot);
-  }
-  .service-tile:hover .st-emoji,
-  .service-tile:focus-within .st-emoji { transform: scale(1.08) rotate(-6deg); }
-
   .st-content {
     position: absolute;
     inset: 0;
@@ -260,7 +241,6 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
   /* Con la tarjeta a media pantalla, el interior tiene que encoger. */
   @media (max-width: 560px) {
     .st-content { padding: 14px; }
-    .st-emoji { width: 36px; height: 36px; font-size: 1.1rem; top: 12px; left: 12px; }
     .st-name { font-size: 1rem; margin-bottom: 6px; }
     .tag-chip, .tag-more { font-size: 0.62rem; padding: 2px 8px; }
     .st-tags { max-height: 22px; }
