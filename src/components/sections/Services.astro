@@ -102,7 +102,29 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
     sumaban más de cuatro pantallas de alto ellos solos: la mitad de la página
     era esta rejilla y no se llegaba nunca a lo de abajo.
   */
-  @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px) {
+    .services-grid { grid-template-columns: repeat(2, 1fr); }
+
+    /*
+      El último servicio, a dos columnas — pero SÓLO si sobra.
+
+      Con nueve servicios y dos columnas, el noveno se queda solo en su fila y
+      la rejilla acaba en escalón. Ocupando el ancho entero cierra recta y
+      además ese servicio gana presencia, así que el remate parece buscado.
+
+      `:last-child:nth-child(odd)` es la condición exacta: coge al último sólo
+      cuando su posición es impar, o sea cuando el total es impar y por tanto
+      hay hueco. Si algún día se añade o se quita un servicio y quedan pares,
+      la regla deja de aplicar sola. No hay que acordarse de venir a tocarla.
+
+      La proporción pasa a 2/1 para que, al medir el doble de ancho, siga
+      teniendo exactamente la misma altura que las tarjetas de al lado.
+    */
+    .services-grid > .service-tile:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+      aspect-ratio: 2 / 1;
+    }
+  }
   @media (max-width: 560px) { .services-grid { gap: 2px; } }
 
   .service-tile {
