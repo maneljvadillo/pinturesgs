@@ -76,10 +76,18 @@ const WALLS = [
     // y=0.824 a y=0.730. El polígono va 2 px por dentro, no 8 como antes:
     // aquello dejaba una franja sin pintar arriba y otra abajo.
     poly: [[0.000, 0.026], [0.283, 0.170], [0.283, 0.727], [0.000, 0.819]],
-    // La franja del borde izquierdo está quemada por la luz de la ventana
-    // (L≈0.98) y ahí el color se dispara a S≈0.41 sin dejar de ser pared: por
-    // eso `blown`, que acepta cualquier píxel casi blanco.
-    key: { minL: 0.50, maxL: 1.00, maxS: 0.45, blown: 0.92, maxWarm: 34 },
+    /*
+      La franja del borde izquierdo está quemada por la luz de la ventana
+      (L≈0.98) y ahí el color se dispara a S≈0.41 sin dejar de ser pared: por
+      eso `blown`, que acepta cualquier píxel casi blanco.
+
+      El mínimo de luz baja de 0.50 a 0.40. La sombra que proyecta la planta
+      sobre esta pared, justo encima del rodapié, mide l≈0.49: se caía por una
+      centésima y dejaba una mancha clara bien visible al pintar. Aquí dentro
+      no hay ningún mueble del que separarse por luz —el rodapié queda FUERA
+      del polígono, por debajo—, así que bajarlo no se lleva nada por delante.
+    */
+    key: { minL: 0.40, maxL: 1.00, maxS: 0.45, blown: 0.92, maxWarm: 34 },
   },
   {
     channel: 1,
