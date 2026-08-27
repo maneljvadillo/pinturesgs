@@ -73,7 +73,21 @@ class ResendMailer implements Mailer {
       replyTo: msg.replyTo,
       attachments: msg.attachments?.map((a) => ({ filename: a.filename, content: a.content })),
     });
-    if (error) throw new Error(`Resend: ${error.message}`);
+    /*
+      El error de Resend se envuelve con el remitente y el destinatario.
+
+      Casi todos los fallos de entrega son uno de estos dos, y sin verlos
+      escritos no hay forma de distinguirlos leyendo el log:
+        · el remitente usa un dominio que no está verificado en Resend;
+        · se usa el remitente de pruebas `onboarding@resend.dev`, que sólo
+          puede escribir a la dirección con la que se creó la cuenta.
+      Con los dos datos delante, el motivo se ve de un vistazo.
+    */
+    if (error) {
+      throw new Error(
+        `Resend rechazó el envío: ${error.message} · remitente: ${sender()} · destinatario: ${to.join(', ')}`,
+      );
+    }
   }
 }
 

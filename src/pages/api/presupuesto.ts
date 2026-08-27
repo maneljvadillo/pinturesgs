@@ -141,7 +141,7 @@ export const POST: APIRoute = async ({ request }) => {
     });
   } catch (err) {
     // El error real se queda en el log del servidor, no se le enseña al visitante.
-    console.error('[presupuesto] fallo al enviar el aviso:', err);
+    console.error('[presupuesto] fallo al enviar el aviso:', err instanceof Error ? err.message : err);
     return fail(
       `No hemos podido enviar tu solicitud. Vuelve a intentarlo en unos minutos o escríbenos a ${CONTACT.email.value}.`,
       502,
