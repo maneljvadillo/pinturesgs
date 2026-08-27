@@ -1,4 +1,5 @@
 /** Maquetado del aviso de presupuesto. */
+import { displayPhone } from '~/lib/budget';
 import type { BudgetInput } from './schema';
 
 const esc = (s: string): string =>
@@ -11,7 +12,7 @@ type Meta = { recibido: string; adjuntos: number };
 export function renderText(d: BudgetInput, meta: Meta): string {
   const rows = [
     ['Nombre', d.nombre],
-    ['Teléfono', d.telefono],
+    ['Teléfono', displayPhone(d.telefono)],
     ['Email', d.email],
     ['Tipo de proyecto', d.tipo],
     ['Ubicación', d.ubicacion || '—'],
@@ -51,7 +52,7 @@ export function renderHtml(d: BudgetInput, meta: Meta): string {
     <tr><td>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         ${row('Nombre', d.nombre)}
-        ${row('Teléfono', d.telefono)}
+        ${row('Teléfono', displayPhone(d.telefono))}
         ${row('Email', d.email)}
         ${row('Proyecto', d.tipo)}
         ${row('Ubicación', d.ubicacion)}

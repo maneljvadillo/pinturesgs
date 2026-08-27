@@ -4,7 +4,7 @@
  * de verdad de lo que se acepta.
  */
 import { z } from 'zod';
-import { EMAIL_RE, LIMITS, PHONE_RE } from '~/lib/budget';
+import { EMAIL_RE, LIMITS, normalizePhone } from '~/lib/budget';
 import { PROJECT_TYPES } from '~/data/site';
 
 const trimmed = z.string().trim();
@@ -14,12 +14,28 @@ export const budgetSchema = z.object({
     .min(LIMITS.nombre.min, 'Escribe tu nombre.')
     .max(LIMITS.nombre.max, 'El nombre es demasiado largo.'),
 
+  /*
+    Sale normalizado a E.164 (`+376608908`), no como lo escribió el visitante.
+    Así el aviso que le llega a la empresa siempre trae un número marcable,
+    escriba quien escriba "608 908", "608-908" o el internacional entero.
+  */
   telefono: trimmed
-    .min(LIMITS.telefono.min, 'Escribe un teléfono de contacto.')
+    .min(1, 'Escribe un teléfono de contacto.')
     .max(LIMITS.telefono.max, 'El teléfono es demasiado largo.')
-    .regex(PHONE_RE, 'Revisa el teléfono: parece incompleto.'),
+    .transform((v, ctx) => {
+      const e164 = normalizePhone(v);
+      if (!e164) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Revisa el teléfono: un número de Andorra son 6 cifras.',
+        });
+        return z.NEVER;
+      }
+      return e164;
+    }),
 
   email: trimmed
+    .min(1, 'Escribe tu email.')
     .max(LIMITS.email.max, 'El email es demasiado largo.')
     .regex(EMAIL_RE, 'Revisa el email: falta algo.'),
 

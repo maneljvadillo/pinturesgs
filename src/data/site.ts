@@ -64,18 +64,49 @@ export const CONTACT = {
   /** Formato E.164, para los enlaces tel: y wa.me. Sin el + ni espacios en whatsapp. */
   phoneHref: real('+376608908'),
   /**
-   * Pendiente a propósito. 608 908 es un móvil andorrano, pero que ese número
-   * tenga WhatsApp es una suposición, no un dato. Mientras siga pendiente, el
-   * botón flotante lleva al formulario en vez de a un wa.me que podría no
-   * existir. Basta con que la empresa lo confirme para activarlo.
+   * ⚠️  A CONFIRMAR POR LA EMPRESA. Es el mismo número de arriba, que sale de
+   * su ficha pública. Que ESE número tenga WhatsApp no está verificado por
+   * ninguna fuente: se ha activado porque el cliente pidió que el formulario
+   * pueda enviarse por WhatsApp y es el único número que hay. Si no es el
+   * correcto, se cambia aquí y cambia en todo el sitio (botón flotante y
+   * botón del formulario).
    */
-  whatsapp: pending(''),
-  email: pending('[Email pendiente]'),
+  whatsapp: real('376608908'),
+  // Facilitado por la empresa.
+  email: real('pinturesgs@gmail.com'),
   // Fuente: ReformesAndorra indica "Principat d'Andorra" como ámbito.
   // No hay dirección postal ni parroquia en ninguna fuente pública.
   location: real("Principat d'Andorra"),
-  social: pending('[Redes sociales pendientes]'),
 } satisfies Record<string, PendingValue>;
+
+/**
+ * Redes sociales. Facilitadas por la empresa.
+ *
+ * El orden es el de aparición en el pie. `handle` es lo que se lee; `url` es
+ * a dónde va. Añadir una red es añadir una línea aquí: el pie las recorre.
+ */
+export const SOCIAL = [
+  {
+    name: 'Instagram',
+    handle: '@pinturesgs',
+    url: 'https://www.instagram.com/pinturesgs/',
+  },
+] as const;
+
+/**
+ * ── El teléfono ───────────────────────────────────────────────────────────
+ * PINTURESGS trabaja en Andorra, así que el formulario da por hecho un número
+ * andorrano: enseña el +376 fijo al lado del campo y quien escribe sólo pone
+ * sus seis cifras. Andorra usa seis dígitos, sin prefijo interno.
+ *
+ * Aun así se acepta un internacional completo (empezando por +) para quien
+ * llame desde fuera: obligar a todo el mundo a tener número andorrano dejaría
+ * fuera a un cliente español con una obra en Andorra, que es un caso real.
+ */
+export const PHONE_CC = '+376';
+export const PHONE_COUNTRY = 'Andorra';
+/** Cuántas cifras tiene un número andorrano, sin prefijo. */
+export const PHONE_NATIONAL_DIGITS = 6;
 
 /**
  * Estadísticas de la home. Siguen TODAS pendientes: no hay ninguna fuente

@@ -13,6 +13,8 @@
  * `Mailer` y devolverla desde `getMailer()`.
  */
 
+import { CONTACT } from '~/data/site';
+
 export type Attachment = { filename: string; content: Buffer };
 
 export type MailMessage = {
@@ -27,11 +29,19 @@ export interface Mailer {
   send(msg: MailMessage): Promise<void>;
 }
 
+/*
+  A quién le llega el aviso. `BUDGET_MAIL_TO` permite desviarlo (a varias
+  direcciones, separadas por comas) sin tocar código; si no está puesta, va al
+  correo de la empresa que hay en site.ts. Antes, sin esa variable, no había
+  destinatario y el envío fallaba: ahora funciona nada más desplegar.
+*/
 function recipients(): string[] {
-  return (import.meta.env.BUDGET_MAIL_TO ?? process.env.BUDGET_MAIL_TO ?? '')
+  const configured = (import.meta.env.BUDGET_MAIL_TO ?? process.env.BUDGET_MAIL_TO ?? '')
     .split(',')
     .map((s: string) => s.trim())
     .filter(Boolean);
+  if (configured.length > 0) return configured;
+  return CONTACT.email.pending ? [] : [CONTACT.email.value];
 }
 
 function sender(): string {
@@ -48,7 +58,7 @@ class ResendMailer implements Mailer {
   async send(msg: MailMessage): Promise<void> {
     const to = recipients();
     if (to.length === 0) {
-      throw new Error('BUDGET_MAIL_TO no está configurado: no hay a quién enviar el aviso.');
+      throw new Error('No hay a quién enviar el aviso: revisa CONTACT.email o BUDGET_MAIL_TO.');
     }
     // Import perezoso: así el paquete no entra en el bundle si no se usa.
     const { Resend } = await import('resend');
