@@ -86,9 +86,21 @@ const WALLS = [
     id: 'fondo',
     // Techo medido en y=0.167 (izq) → 0.174 (der); rodapié en y=0.747.
     poly: [[0.286, 0.169], [0.686, 0.176], [0.686, 0.745], [0.286, 0.745]],
-    // Aquí conviven la pared clara (L≈0.85), el sofá (L≈0.44) y la planta
-    // (S≈0.67): el umbral de luminancia es el que separa el sofá.
-    key: { minL: 0.46, maxL: 1.00, maxS: 0.30, blown: 0.95, maxWarm: 30 },
+    /*
+      El mínimo de luz baja de 0.46 a 0.34.
+
+      La franja de abajo de esta pared está en sombra y además la calienta el
+      rebote del suelo de roble: medida junto al rodapié da l≈0.46, o sea justo
+      en el antiguo umbral, así que la mitad de sus píxeles caían fuera y
+      quedaban dos manchas sin pintar —una tras la mesita y otra junto a la
+      maceta—. Con 0.34 entra entera.
+
+      Bajarlo es seguro porque a estas alturas NADA de lo que hay delante
+      depende ya de la luz para descartarse: el sofá tiene su propio polígono
+      con su propia clave, la planta y el tablero también, y las patas de la
+      mesa las corta el eje cálido (r-b≈43, sobre el límite de 30).
+    */
+    key: { minL: 0.34, maxL: 1.00, maxS: 0.30, blown: 0.95, maxWarm: 30 },
   },
   {
     channel: 2,
@@ -144,17 +156,52 @@ const OCCLUDERS = [
   },
   {
     /*
+      LA PLANTA Y SU MACETA.
+
+      Va con clave propia y no con recorte duro porque dentro de esta caja hay
+      pared que SÍ se pinta: la franja que se ve a la derecha del tiesto, que
+      es justo una de las dos manchas que quedaban sin pintar.
+
+      Medido en la foto, dentro de esta caja los tres se separan por
+      SATURACIÓN, no por luz:
+        · pared en sombra .... s ≈ 0.12   (l ≈ 0.46, r-b ≈ 27)
+        · maceta de barro .... s ≈ 0.21   (l ≈ 0.34, r-b ≈ 33)
+        · hojas .............. s ≈ 0.48
+      Con el corte en 0.18 la pared entra y el tiesto y las hojas no. Por luz
+      era imposible: la pared en sombra (0.46) y la maceta (0.34) se solapan.
+    */
+    name: 'planta y maceta',
+    poly: [[0.265, 0.540], [0.350, 0.540], [0.350, 0.800], [0.265, 0.800]],
+    key: { minL: 0.30, maxL: 1.00, maxS: 0.18, blown: 0.95, maxWarm: 30 },
+  },
+  {
+    /*
       Sólo el TABLERO y la TAZA, que son lo único que la luz no separa: el
       tablero tiene brillos neutros (r-b≈-7) tan claros como la pared, y la
-      taza es blanca y lisa. Las patas ya no entran aquí — las corta el eje
-      cálido— y por eso vuelve a pintarse la pared que se veía entre ellas y a
-      la izquierda de la mesa, que antes se comía este mismo polígono.
+      taza es blanca y lisa. Las patas no entran aquí —las corta el eje
+      cálido—, y por eso se pinta la pared que se ve entre ellas.
+
+      EL CONTORNO ESTÁ BARRIDO SOBRE LA FOTO, fila a fila, no puesto a ojo.
+      El anterior empezaba en y=0.626 (561 px) cuando el objeto más alto —el
+      borde de la taza— no aparece hasta y=588: veintisiete píxeles de pared
+      recortada por encima. Como este polígono es un corte DURO (sin clave de
+      color), esa pared no había forma de que se pintara, y ahí quedaba la
+      mancha que se veía detrás de la mesita.
+
+      Medido: la taza ocupa x 539-563 entre y 588 y 602; el tablero va de
+      x 496-579 entre y 602 y 620, con forma de elipse (más estrecho arriba,
+      porque se ve en escorzo). El polígono sigue esa elipse en vez de
+      encerrarla en un rectángulo, que es lo que dejaba pared dentro.
     */
     name: 'mesa (tablero y taza)',
     poly: [
-      [0.443, 0.626], [0.472, 0.626], [0.472, 0.647], [0.500, 0.651],
-      [0.506, 0.668], [0.503, 0.691], [0.416, 0.691], [0.414, 0.678],
-      [0.441, 0.653], [0.443, 0.647],
+      // La taza.
+      [0.4475, 0.6540], [0.4717, 0.6540], [0.4717, 0.6708],
+      // El tablero, siguiendo la elipse por la derecha.
+      [0.4817, 0.6775], [0.4833, 0.6830], [0.4750, 0.6897], [0.4733, 0.6942],
+      // Y de vuelta por la izquierda.
+      [0.4217, 0.6942], [0.4200, 0.6886], [0.4117, 0.6830],
+      [0.4133, 0.6752], [0.4250, 0.6708], [0.4475, 0.6685],
     ],
   },
 ];
