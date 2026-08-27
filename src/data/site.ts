@@ -95,6 +95,14 @@ export const SOCIAL = [
 ] as const;
 
 /**
+ * Enlace directo a escribir una reseña en la ficha de Google de la empresa.
+ * Lo genera Google desde el perfil de empresa ("Pedir reseñas"), y abre el
+ * formulario de valoración ya apuntando a PINTURESGS: el visitante no tiene
+ * que buscar la ficha ni navegar por Maps.
+ */
+export const GOOGLE_REVIEW_URL = 'https://g.page/r/CXW4JVTwM1EQECE/review';
+
+/**
  * ── El teléfono ───────────────────────────────────────────────────────────
  * PINTURESGS trabaja en Andorra, así que el formulario da por hecho un número
  * andorrano: enseña el +376 fijo al lado del campo y quien escribe sólo pone
