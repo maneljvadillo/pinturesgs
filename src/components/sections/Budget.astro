@@ -1,10 +1,24 @@
 ---
 /**
- * FORMULARIO DE PRESUPUESTO.
+ * FORMULARIO DE PRESUPUESTO — sale por WhatsApp.
  *
- * Envía a /api/presupuesto (función serverless). Funciona sin JavaScript:
- * es un <form> normal con method="post". Con JS activado se intercepta para
- * enviarlo por fetch, mostrar estados y no perder la posición en la página.
+ * El formulario NO envía nada a ningún servidor: recoge los datos, los
+ * ordena en un mensaje y abre WhatsApp con todo escrito. El cliente sólo
+ * tiene que darle a enviar.
+ *
+ * Por qué así y no por correo: enviar correo desde una web exige un
+ * proveedor externo (Resend) con el dominio verificado, y la empresa
+ * prefirió no montarlo. WhatsApp no necesita nada: ni claves, ni servidor,
+ * ni que nadie mire un buzón. Y para un negocio de reformas es donde
+ * responden antes.
+ *
+ * ⚠️  La parte de correo NO se ha borrado: `/api/presupuesto`, el validador
+ * del servidor y el maquetado del email siguen enteros y probados. El día
+ * que se quiera activar, es configurar Resend y volver a apuntar este
+ * formulario ahí. Está explicado en docs/DEPLOY.md.
+ *
+ * Sin JavaScript no hay forma de componer el mensaje, así que en ese caso
+ * se enseña el número y un enlace directo al chat (ver <noscript> abajo).
  */
 import { PROJECT_TYPES, PHONE_CC, PHONE_COUNTRY, CONTACT } from '~/data/site';
 
@@ -20,14 +34,7 @@ const waNumber = CONTACT.whatsapp.pending ? '' : CONTACT.whatsapp.value;
       <p>Cuéntanos qué necesitas y prepararemos un presupuesto personalizado.</p>
     </div>
 
-    <form
-      class="form-grid"
-      id="budgetForm"
-      method="post"
-      action="/api/presupuesto"
-      enctype="multipart/form-data"
-      novalidate
-    >
+    <form class="form-grid" id="budgetForm" novalidate>
       <div class="field">
         <label for="f-nombre">Nombre <span class="req" aria-hidden="true">*</span></label>
         <input id="f-nombre" name="nombre" type="text" placeholder="Tu nombre" required autocomplete="name" />
@@ -88,45 +95,33 @@ const waNumber = CONTACT.whatsapp.pending ? '' : CONTACT.whatsapp.value;
         <p class="field-error" data-error-for="descripcion"></p>
       </div>
 
-      <div class="field full">
-        <label for="f-fotos">Adjuntar fotografías <span class="opt">(opcional)</span></label>
-        <input id="f-fotos" name="fotos" type="file" accept="image/*" multiple class="sr-only" />
-        <label class="file-field" for="f-fotos" id="fileDrop">
-          <span id="fileLabel">Haz clic o arrastra tus imágenes aquí</span>
-          <span class="file-hint">JPG, PNG o WEBP · hasta 5 imágenes · 4 MB en total</span>
-        </label>
-        <p class="field-error" data-error-for="fotos"></p>
-      </div>
-
-      <!--
-        Trampa antispam: es invisible y ningún humano la rellena. Si llega con
-        contenido, el servidor descarta el envío sin decir por qué.
-      -->
-      <div class="hp" aria-hidden="true">
-        <label for="f-web">No rellenar</label>
-        <input id="f-web" name="website" type="text" tabindex="-1" autocomplete="off" />
-      </div>
-      <input type="hidden" name="renderedAt" id="renderedAt" />
-
       <p class="req-note full"><span class="req" aria-hidden="true">*</span> Campos obligatorios.</p>
 
       <div class="submit-row full">
-        <button type="submit" class="btn-paint light" id="submitBtn">Solicitar presupuesto</button>
-        {waNumber && (
-          <button type="button" class="btn-wa" id="waBtn" data-wa={waNumber}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.7 3 1.1 4.8 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2z"
-                stroke="currentColor" stroke-width="1.5" />
-              <path d="M8.5 8.8c.2-.5.5-.5.8-.5h.6c.2 0 .5 0 .7.5.3.6.9 2 1 2.1.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.2.7.2.4 1 1.6 2.2 2.3.6.4 1 .3 1.3 0 .3-.3.6-.7.9-.7.2 0 .5.1.9.4.4.3 1.4.8 1.5 1 .2.2.2.5.1.9-.1.4-.9 1.2-1.6 1.4-.6.2-1.3.3-3.5-.7-2.7-1.2-4.4-4-4.6-4.2-.1-.2-1.2-1.6-1.2-3 0-1.4.7-2 1-2.3z"
-                fill="currentColor" />
-            </svg>
-            Enviar por WhatsApp
-          </button>
-        )}
-        <span class="submit-note">Te responderemos lo antes posible.</span>
+        <button type="submit" class="btn-wa btn-wa--principal" id="waBtn" data-wa={waNumber}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.7 3 1.1 4.8 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2z"
+              stroke="currentColor" stroke-width="1.5" />
+            <path d="M8.5 8.8c.2-.5.5-.5.8-.5h.6c.2 0 .5 0 .7.5.3.6.9 2 1 2.1.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.2.7.2.4 1 1.6 2.2 2.3.6.4 1 .3 1.3 0 .3-.3.6-.7.9-.7.2 0 .5.1.9.4.4.3 1.4.8 1.5 1 .2.2.2.5.1.9-.1.4-.9 1.2-1.6 1.4-.6.2-1.3.3-3.5-.7-2.7-1.2-4.4-4-4.6-4.2-.1-.2-1.2-1.6-1.2-3 0-1.4.7-2 1-2.3z"
+              fill="currentColor" />
+          </svg>
+          Enviar por WhatsApp
+        </button>
+        <span class="submit-note">
+          Se abre WhatsApp con tu solicitud ya escrita. ¿Tienes fotos? Adjúntalas
+          en el mismo chat.
+        </span>
       </div>
 
       <p class="form-status full" id="formStatus" role="status" aria-live="polite"></p>
+
+      <!-- Sin JavaScript no se puede componer el mensaje: se da el enlace pelado. -->
+      <noscript>
+        <p class="form-status full">
+          Escríbenos por WhatsApp al <a href={`https://wa.me/${waNumber}`}>{CONTACT.phone.value}</a>
+          y cuéntanos qué necesitas.
+        </p>
+      </noscript>
     </form>
   </div>
 </section>
@@ -183,6 +178,21 @@ const waNumber = CONTACT.whatsapp.pending ? '' : CONTACT.whatsapp.value;
     transition: background .2s ease, color .2s ease;
   }
   .btn-wa:hover, .btn-wa:focus-visible { background: #25D366; color: var(--ink); }
+
+  /* Ya no es la segunda opción: es la única. Relleno y con cuerpo de botón
+     principal, para que se vea desde el primer vistazo qué hay que pulsar. */
+  .btn-wa--principal {
+    background: #25D366;
+    color: var(--ink);
+    border-color: #25D366;
+    padding: 16px 30px;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .btn-wa--principal:hover, .btn-wa--principal:focus-visible {
+    background: #1eb855;
+    border-color: #1eb855;
+  }
   /*
     Cuando el servidor no puede recibir el correo, el botón de WhatsApp deja
     de ser la segunda opción y pasa a ser LA opción: se rellena para que se
@@ -248,42 +258,8 @@ const waNumber = CONTACT.whatsapp.pending ? '' : CONTACT.whatsapp.value;
   }
   .field.invalid input, .field.invalid select, .field.invalid textarea { border-color: #ff8e7a; }
 
-  /*
-    Va con `.field .file-field` a propósito: este <label> también recibe las
-    reglas de `.field label`, que tiene la misma especificidad de clase pero
-    suma el selector de elemento y ganaba. Con eso la zona de arrastre salía en
-    una sola línea, en mayúsculas y con el interletrado de las etiquetas.
-  */
-  .field .file-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    border: 1.5px dashed #66635A;
-    border-radius: 4px;
-    padding: 18px;
-    text-align: center;
-    font-size: 0.8rem;
-    color: #a6a29a;
-    cursor: pointer;
-    transition: border-color .25s ease, background .25s ease;
-    letter-spacing: normal;
-    text-transform: none;
-    margin-bottom: 0;
-  }
-  .field .file-field:hover, .field .file-field.dragover { border-color: var(--terracotta); background: rgba(193, 80, 46, 0.08); }
-  .file-hint { font-size: 0.7rem; color: #6f6c64; }
-
-  /* Trampa antispam: fuera de pantalla, no `display:none` (algunos bots lo detectan). */
-  .hp {
-    position: absolute;
-    left: -9999px;
-    width: 1px; height: 1px;
-    overflow: hidden;
-  }
-
   .submit-row { margin-top: 12px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
   .submit-note { font-size: 0.8rem; color: #a6a29a; }
-  #submitBtn[disabled] { opacity: 0.55; cursor: progress; }
 
   .form-status { font-size: 0.9rem; line-height: 1.5; }
   .form-status.ok { color: #7ee2a8; }

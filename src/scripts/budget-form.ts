@@ -1,15 +1,12 @@
 /**
  * Formulario de presupuesto en el navegador.
  *
- * El <form> ya funciona sin JavaScript (method="post" a la ruta de la API).
- * Esto añade: validación inmediata, control de los adjuntos, arrastrar y
- * soltar, y envío por fetch para no recargar la página.
+ * No envía nada a ningún servidor: valida, ordena los datos en un mensaje y
+ * abre WhatsApp con todo escrito. La empresa prefirió esta vía antes que
+ * montar un proveedor de correo (ver la nota larga en Budget.astro).
  */
 import { showToast } from '~/scripts/toast';
-import {
-  MAX_FILES, MAX_TOTAL_BYTES, ACCEPTED_TYPES, LIMITS,
-  EMAIL_RE, formatBytes, normalizePhone, displayPhone,
-} from '~/lib/budget';
+import { LIMITS, EMAIL_RE, normalizePhone, displayPhone } from '~/lib/budget';
 
 type Rule = (value: string) => string | null;
 
@@ -40,14 +37,6 @@ export function initBudgetForm(): void {
   if (!form) return;
 
   const statusEl = document.getElementById('formStatus')!;
-  const submitBtn = document.getElementById('submitBtn') as HTMLButtonElement;
-  const fileInput = document.getElementById('f-fotos') as HTMLInputElement;
-  const fileLabel = document.getElementById('fileLabel')!;
-  const fileDrop = document.getElementById('fileDrop')!;
-  const renderedAt = document.getElementById('renderedAt') as HTMLInputElement;
-
-  // Marca cuándo se pintó el formulario: un envío instantáneo delata un bot.
-  renderedAt.value = String(Date.now());
 
 
   // ── Validación por campo ──────────────────────────────────────────────
@@ -89,43 +78,6 @@ export function initBudgetForm(): void {
     });
   });
 
-  // ── Adjuntos ──────────────────────────────────────────────────────────
-  function describeFiles(files: FileList | null): void {
-    if (!files || files.length === 0) {
-      fileLabel.textContent = 'Haz clic o arrastra tus imágenes aquí';
-      setError('fotos', null);
-      return;
-    }
-    const list = Array.from(files);
-    const total = list.reduce((n, f) => n + f.size, 0);
-
-    const badType = list.find((f) => f.type && !ACCEPTED_TYPES.includes(f.type));
-    if (badType) { setError('fotos', `"${badType.name}" no es una imagen admitida.`); return; }
-    if (list.length > MAX_FILES) { setError('fotos', `Máximo ${MAX_FILES} imágenes.`); return; }
-    if (total > MAX_TOTAL_BYTES) {
-      setError('fotos', `Las imágenes suman ${formatBytes(total)}; el máximo es ${formatBytes(MAX_TOTAL_BYTES)}.`);
-      return;
-    }
-    setError('fotos', null);
-    fileLabel.textContent =
-      list.length === 1
-        ? `1 imagen · ${formatBytes(total)}`
-        : `${list.length} imágenes · ${formatBytes(total)}`;
-  }
-
-  fileInput.addEventListener('change', () => describeFiles(fileInput.files));
-
-  ['dragenter', 'dragover'].forEach((ev) =>
-    fileDrop.addEventListener(ev, (e) => { e.preventDefault(); fileDrop.classList.add('dragover'); }));
-  ['dragleave', 'drop'].forEach((ev) =>
-    fileDrop.addEventListener(ev, (e) => { e.preventDefault(); fileDrop.classList.remove('dragover'); }));
-  fileDrop.addEventListener('drop', (e) => {
-    const dt = (e as DragEvent).dataTransfer;
-    if (!dt?.files.length) return;
-    fileInput.files = dt.files;
-    describeFiles(dt.files);
-  });
-
   // ── Envío por WhatsApp ────────────────────────────────────────────────
   /*
     Segunda vía, no sustituto. Abre WhatsApp con la solicitud ya escrita: el
@@ -150,6 +102,7 @@ export function initBudgetForm(): void {
       form!.querySelector<HTMLElement>(`[name="${primerFallo}"]`)?.focus();
       statusEl.className = 'form-status full error';
       statusEl.textContent = 'Completa nombre, teléfono, email y tipo antes de enviar.';
+      statusEl.className = 'form-status full error';
       return false;
     }
 
@@ -157,7 +110,6 @@ export function initBudgetForm(): void {
       (form!.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[name="${n}"]`)?.value ?? '').trim();
 
     const tel = normalizePhone(val('telefono'));
-    const nFotos = fileInput.files?.length ?? 0;
 
     const lineas = [
       `Hola, quiero pedir un presupuesto.`,
@@ -169,9 +121,6 @@ export function initBudgetForm(): void {
     ];
     if (val('ubicacion')) lineas.push(`Ubicación: ${val('ubicacion')}`);
     if (val('descripcion')) lineas.push(``, val('descripcion'));
-    if (nFotos > 0) {
-      lineas.push(``, `(Tengo ${nFotos} ${nFotos === 1 ? 'foto' : 'fotos'} para enseñaros; os las paso por aquí.)`);
-    }
 
     const numero = waBtn.dataset.wa!;
     window.open(
@@ -182,79 +131,18 @@ export function initBudgetForm(): void {
     return true;
   }
 
-  waBtn?.addEventListener('click', () => { enviarPorWhatsApp(); });
-
-  // ── Envío ─────────────────────────────────────────────────────────────
-  form.addEventListener('submit', async (e) => {
+  /*
+    Se engancha al `submit` del formulario, no al `click` del botón: así
+    también funciona al pulsar Intro dentro de un campo, que es como mucha
+    gente envía un formulario.
+  */
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
-
-    const names = Object.keys(RULES);
-    const firstBad = names.find((n) => !validateField(n));
-    if (firstBad) {
-      form.querySelector<HTMLElement>(`[name="${firstBad}"]`)?.focus();
-      statusEl.className = 'form-status full error';
-      statusEl.textContent = 'Revisa los campos marcados antes de enviar.';
-      return;
-    }
-    if (errorOf('fotos')?.textContent) {
-      statusEl.className = 'form-status full error';
-      statusEl.textContent = 'Revisa las imágenes adjuntas.';
-      return;
-    }
-
-    submitBtn.disabled = true;
-    statusEl.className = 'form-status full';
-    statusEl.textContent = 'Enviando…';
-
-    try {
-      const res = await fetch(form.action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { Accept: 'application/json' },
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        ok?: boolean; message?: string; errors?: Record<string, string>; via?: string;
-      };
-
-      if (!res.ok || !data.ok) {
-        if (data.errors) {
-          for (const [name, msg] of Object.entries(data.errors)) setError(name, msg);
-        }
-        /*
-          El servidor puede decir que hay otra salida. Pasa cuando el correo
-          no está configurado: en vez de dejar al cliente delante de un error
-          rojo sin nada que hacer, se le termina la solicitud por WhatsApp con
-          todo lo que ya había escrito.
-
-          No se abre WhatsApp solo: entre el clic y esta respuesta hay una
-          espera, y los navegadores bloquean las ventanas que se abren fuera
-          de un gesto del usuario. Se le pide un clic más, que además es lo
-          honesto: nadie quiere que una web le abra WhatsApp sin avisar.
-        */
-        if (data.via === 'whatsapp' && waBtn) {
-          statusEl.className = 'form-status full';
-          statusEl.textContent = data.message ?? 'Termínalo por WhatsApp y nos llega al momento.';
-          waBtn.classList.add('urge');
-          waBtn.focus();
-          return;
-        }
-        statusEl.className = 'form-status full error';
-        statusEl.textContent = data.message ?? 'No hemos podido enviar la solicitud. Inténtalo de nuevo.';
-        return;
-      }
-
-      form.reset();
-      describeFiles(null);
+    if (enviarPorWhatsApp()) {
       statusEl.className = 'form-status full ok';
-      statusEl.textContent = data.message ?? '¡Recibido! Te responderemos lo antes posible.';
-      showToast('Solicitud enviada. Gracias.');
-    } catch {
-      statusEl.className = 'form-status full error';
-      statusEl.textContent =
-        'No hemos podido conectar. Revisa tu conexión o escríbenos directamente.';
-    } finally {
-      submitBtn.disabled = false;
-      renderedAt.value = String(Date.now());
+      statusEl.textContent = 'Abriendo WhatsApp con tu solicitud…';
+      showToast('Solicitud preparada en WhatsApp.');
     }
   });
+
 }

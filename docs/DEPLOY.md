@@ -22,32 +22,34 @@ Estado a fecha del lanzamiento (agosto de 2026).
 
 ### Pendiente — hace falta la empresa
 
-- [ ] **⚠️ `RESEND_API_KEY` en Vercel.** SIN ESTO EL FORMULARIO NO ENTREGA
-      NADA. La API lo detecta y, en producción, en vez de decirle al cliente
-      "¡Recibido!" le pide que escriba directamente — o sea, el formulario se
-      ve como averiado hasta que la clave esté puesta. Alta gratuita en
-      resend.com (3.000 emails/mes).
-- [ ] **Verificar pinturesgs.com en Resend.** Es lo único que falta para que
-      los presupuestos lleguen a `pinturesgs@gmail.com`.
+- [x] **El formulario sale por WhatsApp, no por correo.** Decisión de la
+      empresa (agosto de 2026). El formulario no toca el servidor: valida,
+      ordena los datos en un mensaje y abre WhatsApp con todo escrito.
 
-      El porqué, comprobado en producción: sin dominio verificado, Resend
-      obliga a usar su remitente de pruebas `onboarding@resend.dev`, y ese
-      remitente **sólo entrega a la dirección con la que se creó la cuenta de
-      Resend** (aquí, `maneljvadillo@gmail.com`). Cualquier otro destinatario
-      se rechaza y la API devuelve 502.
+      Por qué: enviar correo desde la web exige un proveedor externo (Resend)
+      con el dominio verificado por DNS, y no se quiso montar. WhatsApp no
+      necesita nada —ni claves, ni servidor, ni vigilar un buzón— y para este
+      negocio es donde antes se responde.
 
-      Apaño temporal en marcha: `BUDGET_MAIL_TO=maneljvadillo@gmail.com`, para
-      que el formulario entregue mientras tanto.
+      Lo que NO se borró, por si algún día se quiere el correo: la ruta
+      `/api/presupuesto`, la validación del servidor (`server/schema.ts`), el
+      maquetado del email (`server/render-email.ts`) y el envío
+      (`server/mailer.ts`) siguen enteros y probados. Para reactivarlo:
+        1. Verificar `pinturesgs.com` en Resend (Domains → Add Domain; hay
+           integración automática con Vercel que pone los DNS solos).
+        2. En Vercel: `RESEND_API_KEY`, `BUDGET_MAIL_FROM` con una dirección
+           del dominio verificado, y `BUDGET_MAIL_TO`.
+        3. Devolver el `action="/api/presupuesto"` al <form> de Budget.astro y
+           el envío por fetch a `scripts/budget-form.ts`.
 
-      Arreglo definitivo:
-        1. Resend → Domains → Add Domain → `pinturesgs.com`.
-        2. Copiar los registros DNS que da y ponerlos en Vercel → el dominio →
-           DNS Records. (El DNS del dominio está en Vercel, que es donde se
-           compró.) Resend tiene integración con Vercel que lo hace solo.
-        3. Cuando Resend lo marque como verificado, en Vercel:
-           `BUDGET_MAIL_FROM` = `PINTURESGS <presupuestos@pinturesgs.com>`
-           `BUDGET_MAIL_TO`   = `pinturesgs@gmail.com`
-        4. Redeploy.
+      ⚠️  Ojo con el remitente: mientras el dominio no esté verificado, Resend
+      obliga a usar `onboarding@resend.dev`, que SÓLO entrega a la dirección
+      con la que se creó la cuenta de Resend. Se perdió un buen rato con esto.
+
+      ⚠️  Y las fotos: por WhatsApp no viajan adjuntas. El campo de subir
+      imágenes se quitó del formulario (un campo que no entrega nada es peor
+      que no tenerlo) y en su lugar se pide que las manden por el chat.
+
 - [ ] **Reseñas reales.** Las seis de la home son de ejemplo y la sección lo
       dice ("Ejemplos ilustrativos… estamos recogiendo las opiniones"). En
       cuanto haya reseñas de verdad: se sustituye el texto en
