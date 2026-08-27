@@ -27,11 +27,14 @@ const photoMeta = PHOTO_BY_KEY['sala-tres-paredes']!;
 const salaImg = await getImage({ src: sala, width: sala.width, format: 'webp', quality: 88 });
 
 /**
- * Cuántas combinaciones se ven sin desplegar. Con las diez a la vista la
- * tarjeta de la paleta quedaba cargadísima y tapaba lo importante, que son los
- * colores; el resto se despliega con un botón.
+ * Cuántas combinaciones se ven sin desplegar.
+ *
+ * Eran cuatro porque la paleta entera vivía en esta misma columna y con las
+ * diez a la vista la tarjeta quedaba cargadísima. Ahora la paleta está abajo,
+ * a lo ancho, y esta columna sólo lleva las combinaciones: caben las diez y
+ * además son las que rellenan el alto de la foto de al lado.
  */
-const VISIBLE_COMBOS = 4;
+const VISIBLE_COMBOS = COMBOS.length;
 
 const TOOLS = [
   { id: 'rellenar', emoji: '🪣', label: 'Rellenar', hint: 'Pinta la zona entera de una vez' },
@@ -165,9 +168,6 @@ const TOOLS = [
             </button>
           ))}
         </div>
-        <button type="button" class="combo-more" id="comboMore" aria-expanded="false" aria-controls="comboRow">
-          +{COMBOS.length - VISIBLE_COMBOS} combinaciones más
-        </button>
 
         <p class="pt-card-sub">O zona a zona. Zona seleccionada:</p>
         <div class="wall-picker" id="wallPicker"></div>
@@ -182,36 +182,53 @@ const TOOLS = [
           Sigue siendo información visual: cada botón lleva su `aria-label` con
           el nombre, así que un lector de pantalla ya lo dice sin esta línea.
         -->
-        <p class="swatch-readout" id="swatchReadout" aria-hidden="true">
-          <span class="ro-sq"></span>
-          <span class="ro-text">Señala un color para ver su nombre</span>
-        </p>
 
-        <div class="palette-scroll" id="paletteScroll">
-          {PALETTE.map((group) => (
-            <div class="palette-group">
-              <h4>{group.group}</h4>
-              <div class="swatch-grid">
-                {group.colors.map((c) => (
-                  <button
-                    type="button"
-                    class="swatch-cell"
-                    data-hex={c.hex}
-                    data-name={c.name}
-                    title={`${c.name} · ${c.hex}`}
-                    aria-label={`Aplicar ${c.name}`}
-                    style={`background:${c.hex}`}
-                  ></button>
-                ))}
-              </div>
+      </div>
+    </div>
+
+    <!--
+      La paleta completa, a lo ancho y fuera de la columna de la derecha.
+
+      Estaba metida ahí dentro (471 px) con su propio scroll, y eso hacía dos
+      cosas mal a la vez: obligaba a rebuscar los colores por una mirilla de
+      cuatro columnas, y estiraba esa tarjeta 195 px más que la de la imagen,
+      dejando un hueco enorme justo debajo de la foto.
+
+      A lo ancho caben muchas más muestras por fila, se ve todo de un vistazo y
+      desaparece el scroll dentro de una caja.
+    -->
+    <div class="pt-card pt-paleta">
+      <h3>Todos los colores</h3>
+
+      <p class="swatch-readout" id="swatchReadout" aria-hidden="true">
+        <span class="ro-sq"></span>
+        <span class="ro-text">Señala un color para ver su nombre</span>
+      </p>
+
+      <div class="palette-scroll" id="paletteScroll">
+        {PALETTE.map((group) => (
+          <div class="palette-group">
+            <h4>{group.group}</h4>
+            <div class="swatch-grid">
+              {group.colors.map((c) => (
+                <button
+                  type="button"
+                  class="swatch-cell"
+                  data-hex={c.hex}
+                  data-name={c.name}
+                  title={`${c.name} · ${c.hex}`}
+                  aria-label={`Aplicar ${c.name}`}
+                  style={`background:${c.hex}`}
+                ></button>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
 
-        <div class="custom-color-row">
-          <input type="color" id="customColor" value="#C1502E" aria-label="Color personalizado" />
-          <span>Color personalizado</span>
-        </div>
+      <div class="custom-color-row">
+        <input type="color" id="customColor" value="#C1502E" aria-label="Color personalizado" />
+        <span>Color personalizado</span>
       </div>
     </div>
   </div>
@@ -246,11 +263,16 @@ const TOOLS = [
   .tool-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
   /* ── Tarjetas ─────────────────────────────────────────────────────── */
+  /*
+    `stretch` y no `start`: las dos tarjetas miden lo mismo de alto aunque su
+    contenido no dé para tanto. Con `start`, la más corta terminaba antes y
+    dejaba un escalón a su lado — que es justo lo que pasaba debajo de la foto.
+  */
   .pt-row {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
     gap: 22px;
-    align-items: start;
+    align-items: stretch;
   }
   @media (max-width: 1100px) { .pt-row { grid-template-columns: 1fr; } }
 
@@ -271,6 +293,15 @@ const TOOLS = [
     background: var(--rainbow-line);
   }
   .pt-card h3 { font-family: var(--serif); font-size: 1.05rem; margin-bottom: 4px; }
+
+  /*
+    La columna de la derecha en vertical, para que la lista de combinaciones
+    pueda quedarse con el alto sobrante en vez de dejarlo en blanco al final.
+  */
+  .pt-row > .pt-card:last-child { display: flex; flex-direction: column; }
+
+  /* La paleta completa, a lo ancho y debajo de las dos. */
+  .pt-paleta { margin-top: 22px; }
   .pt-card-sub { font-size: 0.76rem; color: var(--stone); margin-bottom: 14px; line-height: 1.5; }
 
   /* ── Escenario ────────────────────────────────────────────────────── */
@@ -358,8 +389,24 @@ const TOOLS = [
   .wall-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 
   /* ── Paleta ───────────────────────────────────────────────────────── */
-  .palette-scroll { max-height: 420px; overflow-y: auto; padding-right: 6px; }
-  .palette-group { margin-bottom: 14px; }
+  /* Sin `max-height` ni scroll: a lo ancho cabe entera y se ve de un vistazo. */
+  .palette-scroll { margin-top: 4px; }
+  /*
+    Los grupos de color se reparten en columnas. Con 1200 px de ancho, ponerlos
+    uno debajo de otro dejaba una fila larguísima por grupo y mucho aire a los
+    lados; en columnas se leen como una carta de colores.
+  */
+  .palette-scroll {
+    columns: 3;
+    column-gap: 26px;
+  }
+  @media (max-width: 900px) { .palette-scroll { columns: 2; } }
+  @media (max-width: 560px) { .palette-scroll { columns: 1; } }
+  .palette-group {
+    margin-bottom: 16px;
+    /* Que un grupo no se parta entre dos columnas. */
+    break-inside: avoid;
+  }
   .palette-group h4 {
     font-family: var(--sans);
     font-size: 0.68rem;
@@ -443,7 +490,16 @@ const TOOLS = [
   }
 
   /* ── Combinaciones ────────────────────────────────────────────────── */
+  /*
+    `flex: 1` para que esta lista absorba el alto que le sobre a la columna:
+    así la tarjeta llega justo hasta donde acaba la foto de al lado en vez de
+    dejar un hueco al final. `grid-auto-rows: 1fr` reparte ese alto entre las
+    filas, de modo que las combinaciones crecen un poco y quedan más cómodas
+    de pulsar en vez de amontonarse arriba.
+  */
   .combo-row {
+    flex: 1;
+    grid-auto-rows: 1fr;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
@@ -481,21 +537,7 @@ const TOOLS = [
   .combo-dot:last-child { width: 10px; }
 
   .combo-text { display: flex; flex-direction: column; min-width: 0; }
-  .combo-btn.extra { display: none; }
-  .combo-row.expanded .combo-btn.extra { display: flex; }
 
-  .combo-more {
-    display: inline-block;
-    margin-bottom: 18px;
-    padding: 5px 12px;
-    border: 1px solid var(--control-border);
-    border-radius: 20px;
-    background: transparent;
-    font-size: 0.72rem;
-    cursor: pointer;
-    transition: border-color .25s ease, background .25s ease;
-  }
-  .combo-more:hover { border-color: var(--ink); background: rgba(0, 0, 0, 0.03); }
 
   .combo-name { font-size: 0.78rem; font-weight: 500; line-height: 1.25; }
   .combo-mood {

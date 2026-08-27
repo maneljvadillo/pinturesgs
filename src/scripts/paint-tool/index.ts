@@ -670,17 +670,6 @@ export async function initPaintTool(): Promise<void> {
     btn.addEventListener('click', () => applyCombo(btn.dataset.combo!.split(','), btn));
   });
 
-  // Las combinaciones que no caben de entrada se despliegan con el botón.
-  const comboRow = document.getElementById('comboRow');
-  const comboMore = document.getElementById('comboMore');
-  if (comboRow && comboMore) {
-    const hidden = comboRow.querySelectorAll('.combo-btn.extra').length;
-    comboMore.addEventListener('click', () => {
-      const open = comboRow.classList.toggle('expanded');
-      comboMore.setAttribute('aria-expanded', String(open));
-      comboMore.textContent = open ? 'Ver menos' : `+${hidden} combinaciones más`;
-    });
-  }
   customColor.addEventListener('input', () => applyColor(customColor.value));
 
   // ── Comparador ──────────────────────────────────────────────────────────
