@@ -27,9 +27,27 @@ Estado a fecha del lanzamiento (agosto de 2026).
       "¡Recibido!" le pide que escriba directamente — o sea, el formulario se
       ve como averiado hasta que la clave esté puesta. Alta gratuita en
       resend.com (3.000 emails/mes).
-- [ ] **Remitente verificado.** `BUDGET_MAIL_FROM` tiene que ser una dirección
-      de un dominio verificado en Resend (p. ej. `presupuestos@pinturesgs.com`).
-      El `onboarding@resend.dev` de prueba sólo entrega al dueño de la cuenta.
+- [ ] **Verificar pinturesgs.com en Resend.** Es lo único que falta para que
+      los presupuestos lleguen a `pinturesgs@gmail.com`.
+
+      El porqué, comprobado en producción: sin dominio verificado, Resend
+      obliga a usar su remitente de pruebas `onboarding@resend.dev`, y ese
+      remitente **sólo entrega a la dirección con la que se creó la cuenta de
+      Resend** (aquí, `maneljvadillo@gmail.com`). Cualquier otro destinatario
+      se rechaza y la API devuelve 502.
+
+      Apaño temporal en marcha: `BUDGET_MAIL_TO=maneljvadillo@gmail.com`, para
+      que el formulario entregue mientras tanto.
+
+      Arreglo definitivo:
+        1. Resend → Domains → Add Domain → `pinturesgs.com`.
+        2. Copiar los registros DNS que da y ponerlos en Vercel → el dominio →
+           DNS Records. (El DNS del dominio está en Vercel, que es donde se
+           compró.) Resend tiene integración con Vercel que lo hace solo.
+        3. Cuando Resend lo marque como verificado, en Vercel:
+           `BUDGET_MAIL_FROM` = `PINTURESGS <presupuestos@pinturesgs.com>`
+           `BUDGET_MAIL_TO`   = `pinturesgs@gmail.com`
+        4. Redeploy.
 - [ ] **Reseñas reales.** Las seis de la home son de ejemplo y la sección lo
       dice ("Ejemplos ilustrativos… estamos recogiendo las opiniones"). En
       cuanto haya reseñas de verdad: se sustituye el texto en
