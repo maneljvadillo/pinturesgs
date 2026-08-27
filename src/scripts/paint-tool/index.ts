@@ -670,6 +670,25 @@ export async function initPaintTool(): Promise<void> {
     btn.addEventListener('click', () => applyCombo(btn.dataset.combo!.split(','), btn));
   });
 
+  /*
+    Desplegar el resto de familias de color.
+
+    Se ocultan con una clase y no quitándolas del HTML: las muestras ya están
+    puestas y enganchadas al mismo manejador que las visibles, así que al
+    desplegarlas funcionan sin volver a montar nada.
+  */
+  const paletteMore = document.getElementById('paletteMore');
+  if (paletteMore) {
+    const ocultas = paletteScroll.querySelectorAll('.palette-group.extra').length;
+    paletteMore.addEventListener('click', () => {
+      const abierto = paletteScroll.classList.toggle('expanded');
+      paletteMore.setAttribute('aria-expanded', String(abierto));
+      paletteMore.innerHTML = abierto
+        ? 'Ver menos colores'
+        : `Ver más colores <span class="pm-n">(${ocultas} familias más)</span>`;
+    });
+  }
+
   customColor.addEventListener('input', () => applyColor(customColor.value));
 
   // ── Comparador ──────────────────────────────────────────────────────────

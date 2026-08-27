@@ -7,9 +7,36 @@
 export type Swatch = { name: string; hex: string };
 export type PaletteGroup = { group: string; colors: Swatch[] };
 
+/**
+ * Luminancia relativa (la fórmula de la WCAG): 0 es negro, 1 es blanco.
+ *
+ * No sirve la media de R, G y B: el ojo no ve los tres canales igual de
+ * brillantes —el verde pesa siete veces más que el azul—, así que ordenando
+ * por la media un azul oscuro y un verde oscuro caen en sitios que no se
+ * corresponden con lo que se ve. Con esta fórmula el orden coincide con lo
+ * que percibe quien mira la carta.
+ */
+function luminancia(hex: string): number {
+  const canal = (i: number): number => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * canal(1) + 0.7152 * canal(3) + 0.0722 * canal(5);
+}
+
+/**
+ * Cada familia se ordena SOLA, de más fuerte (oscuro) a más flojo (claro).
+ *
+ * Va aquí, en la fábrica, y no en la lista de abajo a mano: así se pueden
+ * añadir colores al final de su familia sin pensar dónde colocarlos, que es
+ * como se acaba desordenando una carta de colores. Y no hay dos sitios que
+ * mantener sincronizados.
+ */
 const g = (group: string, colors: [string, string][]): PaletteGroup => ({
   group,
-  colors: colors.map(([name, hex]) => ({ name, hex })),
+  colors: colors
+    .map(([name, hex]) => ({ name, hex }))
+    .sort((a, b) => luminancia(a.hex) - luminancia(b.hex)),
 });
 
 export const PALETTE: PaletteGroup[] = [

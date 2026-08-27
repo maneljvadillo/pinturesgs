@@ -36,6 +36,20 @@ const salaImg = await getImage({ src: sala, width: sala.width, format: 'webp', q
  */
 const VISIBLE_COMBOS = COMBOS.length;
 
+/**
+ * Cuántas FAMILIAS de color se ven sin desplegar.
+ *
+ * Son veinte familias y 272 muestras: puestas todas, sólo la paleta medía casi
+ * una pantalla en escritorio y el triple en móvil, donde las familias van en
+ * una sola columna. Con seis se ve una carta de colores de verdad —dos por
+ * columna— y quien quiera más las pide.
+ *
+ * Las seis primeras son las de la lista: blancos, negros, grises, beiges,
+ * marrones y rojos. Es decir, los neutros primero, que es por donde empieza
+ * cualquiera que esté eligiendo un color para una pared.
+ */
+const VISIBLE_GROUPS = 6;
+
 const TOOLS = [
   { id: 'rellenar', emoji: '🪣', label: 'Rellenar', hint: 'Pinta la zona entera de una vez' },
   { id: 'brocha',   emoji: '🖌️', label: 'Brocha',   hint: 'Traza fino, para retocar' },
@@ -206,8 +220,8 @@ const TOOLS = [
       </p>
 
       <div class="palette-scroll" id="paletteScroll">
-        {PALETTE.map((group) => (
-          <div class="palette-group">
+        {PALETTE.map((group, i) => (
+          <div class:list={['palette-group', { extra: i >= VISIBLE_GROUPS }]}>
             <h4>{group.group}</h4>
             <div class="swatch-grid">
               {group.colors.map((c) => (
@@ -225,6 +239,16 @@ const TOOLS = [
           </div>
         ))}
       </div>
+
+      <button
+        type="button"
+        class="palette-more"
+        id="paletteMore"
+        aria-expanded="false"
+        aria-controls="paletteScroll"
+      >
+        Ver más colores <span class="pm-n">({PALETTE.length - VISIBLE_GROUPS} familias más)</span>
+      </button>
 
       <div class="custom-color-row">
         <input type="color" id="customColor" value="#C1502E" aria-label="Color personalizado" />
@@ -407,6 +431,30 @@ const TOOLS = [
     /* Que un grupo no se parta entre dos columnas. */
     break-inside: avoid;
   }
+  /* Las familias de más allá del corte. `display: none` y no `visibility`
+     para que además salgan del recorrido del tabulador estando plegadas. */
+  .palette-group.extra { display: none; }
+  .palette-scroll.expanded .palette-group.extra { display: block; }
+
+  .palette-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 9px 18px;
+    border: 1px solid var(--control-border);
+    border-radius: 20px;
+    background: transparent;
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: border-color .25s ease, background .25s ease;
+  }
+  .palette-more:hover, .palette-more:focus-visible {
+    border-color: var(--ink);
+    background: rgba(0, 0, 0, 0.03);
+  }
+  .palette-more .pm-n { color: var(--stone); }
   .palette-group h4 {
     font-family: var(--sans);
     font-size: 0.68rem;
