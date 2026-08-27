@@ -24,7 +24,23 @@ export default defineConfig({
     imageService: false,
     webAnalytics: { enabled: false },
   }),
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      /*
+        Fuera del sitemap las páginas que llevan `noindex`.
+
+        Anunciar en el sitemap una página que le pides a Google que no indexe
+        es contradecirte: Search Console lo marca como error ("URL enviada con
+        la etiqueta noindex") y ensucia el informe de cobertura del sitio.
+
+        - /logo     página interna para elegir la variante del logotipo.
+        - /gracias  el "gracias" de después de enviar el formulario; no es una
+                    página de entrada y no tiene sentido que nadie llegue ahí
+                    desde un buscador.
+      */
+      filter: (page) => !/\/(logo|gracias)\/?$/.test(new URL(page).pathname),
+    }),
+  ],
   image: {
     // Los formatos modernos se generan en build; el <img> lleva srcset y fallback.
     responsiveStyles: true,

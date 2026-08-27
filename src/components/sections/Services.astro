@@ -9,7 +9,6 @@
 import { Image } from 'astro:assets';
 import { SERVICES, VISIBLE_TAGS } from '~/data/services';
 import { photoSrc, photoAlt } from '~/lib/photos';
-import { HAS_STOCK_PHOTOS } from '~/data/photos';
 
 /**
  * Cada servicio se pinta de un color de la marca. Es una rotación fija (no
@@ -81,12 +80,6 @@ const ACCENTS = ['red', 'orange', 'yellow', 'green', 'turq', 'blue', 'purple', '
       })}
     </ul>
 
-    {HAS_STOCK_PHOTOS && (
-      <p class="photo-note">
-        Fotografías de referencia (banco de imágenes libre de derechos) — listas para
-        sustituir por fotos reales de vuestros proyectos.
-      </p>
-    )}
   </div>
 </section>
 

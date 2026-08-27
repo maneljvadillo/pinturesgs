@@ -2,28 +2,58 @@
 
 ## Antes de publicar: comprobaciones
 
-Nada de esto lo puede hacer el desarrollador solo; hace falta que la empresa
-confirme los datos.
+Estado a fecha del lanzamiento (agosto de 2026).
 
-- [ ] **Confirmar el teléfono.** `(+376) 608 908` sale de una única fuente
-      pública ([ReformesAndorra](https://www.reformesandorra.com/pintures-gs-andorra.html))
-      y no aparece ni en las Pàgines Grogues ni en empreses.ad. Si es correcto,
-      no hay que tocar nada; si no, cambiarlo en `src/data/site.ts`.
-- [ ] **¿Ese número tiene WhatsApp?** Si sí, rellenar `CONTACT.whatsapp` con
-      `376608908` y el botón flotante empieza a abrir WhatsApp. Si no, se queda
-      como está y el botón sigue llevando al formulario.
-- [ ] **Email de contacto** → `CONTACT.email`, y el mismo en `BUDGET_MAIL_TO`.
-- [ ] **Dominio definitivo** → `SITE.url`. Ahora apunta a `pinturesgs.com`, que
-      **no está registrado**. Ver más abajo.
-- [ ] **Decidir el idioma.** La web está en español. Para un negocio andorrano,
-      el catalán suele ser la opción natural; es una decisión de la empresa.
-- [ ] **Confirmar las categorías de servicio.** Parkings, Altura, Metal e
-      Industrial no las respalda ninguna fuente pública. O se confirman, o se
-      quitan de `src/data/services.ts`.
-- [ ] **Estadísticas y testimonios.** Siguen con `[X]` y marcados como ejemplo.
-      Se puede publicar así (se ve que están pendientes), pero da mejor imagen
-      rellenarlos o quitar esas secciones.
-- [ ] `npm run check` y `npm run build` sin errores.
+### Cerrado
+
+- [x] **Email de contacto.** `pinturesgs@gmail.com`, facilitado por la empresa.
+      Está en `CONTACT.email` y es a donde llegan los presupuestos por defecto
+      (sin necesidad de configurar `BUDGET_MAIL_TO`).
+- [x] **Instagram.** `https://www.instagram.com/pinturesgs/`, en el pie y en los
+      datos estructurados (`sameAs`).
+- [x] **Dominio.** `pinturesgs.com`, comprado en Vercel. Vive sólo en
+      `SITE.url`; de ahí salen la canónica, el sitemap, el robots.txt y las
+      etiquetas Open Graph.
+- [x] **Categorías de servicio.** La empresa confirmó que presta las nueve,
+      incluidas Parkings, Altura, Metal e Industrial.
+- [x] **Teléfono y WhatsApp.** `(+376) 608 908`. Ver el aviso de abajo.
+- [x] `npm run check` y `npm run build` sin errores.
+
+### Pendiente — hace falta la empresa
+
+- [ ] **⚠️ `RESEND_API_KEY` en Vercel.** SIN ESTO EL FORMULARIO NO ENTREGA
+      NADA. La API lo detecta y, en producción, en vez de decirle al cliente
+      "¡Recibido!" le pide que escriba directamente — o sea, el formulario se
+      ve como averiado hasta que la clave esté puesta. Alta gratuita en
+      resend.com (3.000 emails/mes).
+- [ ] **Remitente verificado.** `BUDGET_MAIL_FROM` tiene que ser una dirección
+      de un dominio verificado en Resend (p. ej. `presupuestos@pinturesgs.com`).
+      El `onboarding@resend.dev` de prueba sólo entrega al dueño de la cuenta.
+- [ ] **⚠️ Confirmar que el 608 908 tiene WhatsApp.** El botón flotante y el
+      del formulario ya abren `wa.me/376608908`. El número sale de la ficha
+      pública de la empresa, pero que TENGA WhatsApp no lo confirma ninguna
+      fuente. Si no es el bueno, se cambia `CONTACT.whatsapp` en `site.ts`.
+- [ ] **Reseñas reales.** Las seis de la home son de ejemplo y la sección lo
+      dice ("Ejemplos ilustrativos… estamos recogiendo las opiniones"). En
+      cuanto haya reseñas de verdad: se sustituye el texto en
+      `src/data/testimonials.ts` y se pone `sample: false` en cada una. El
+      aviso desaparece solo cuando ninguna quede marcada como ejemplo.
+
+      NO se puede quitar el aviso dejando los textos actuales: presentar como
+      opinión de un cliente algo que nadie ha dicho es publicidad engañosa
+      (Directiva Ómnibus, en España Ley de Competencia Desleal).
+- [ ] **Fotos reales.** Las 16 son de banco. Sustituirlas en
+      `src/data/photos.ts` cuando haya fotos de obras propias.
+- [ ] **Idioma.** La web está en español. Para un negocio andorrano el catalán
+      suele ser la opción natural; es decisión de la empresa.
+
+### Opcional
+
+- [ ] **Borrar `/logo`.** Es la página interna para elegir la variante del
+      logotipo. Ya está decidida (`realista-b`), lleva `noindex` y está fuera
+      del sitemap, así que no la encuentra nadie — pero sigue siendo accesible
+      con la URL. Borrar `src/pages/logo.astro` y las variantes descartadas de
+      `src/assets` deja el sitio más limpio y el build más ligero.
 
 ---
 

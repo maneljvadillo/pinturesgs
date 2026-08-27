@@ -20,6 +20,10 @@
  */
 import { TESTIMONIALS } from '~/data/testimonials';
 
+/* En cuanto TODAS las reseñas sean reales (`sample: false`), la nota
+   desaparece sola. No hay que acordarse de venir a borrarla. */
+const hayEjemplos = TESTIMONIALS.some((t) => t.sample);
+
 const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
 ---
 
@@ -28,6 +32,12 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
     <div class="section-head">
       <span class="eyebrow">Testimonios</span>
       <h2>Lo que dicen quienes ya han confiado en nosotros.</h2>
+      {hayEjemplos && (
+        <p class="testi-disclaimer">
+          Ejemplos ilustrativos del tipo de trabajo que hacemos. Estamos recogiendo
+          las opiniones de nuestros clientes para publicarlas aquí.
+        </p>
+      )}
     </div>
 
     <div class="testi-viewport">
@@ -43,11 +53,6 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
           </p>
           <blockquote class="testi-text">{t.text}</blockquote>
           <p class="testi-author">{t.author}</p>
-          {t.sample && (
-            <p class="placeholder-note">
-              opinión de ejemplo — pendiente de sustituir por reseñas reales
-            </p>
-          )}
         </li>
       ))}
       </ul>
@@ -208,7 +213,25 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
   .testi-text::before { content: '“'; }
   .testi-text::after { content: '”'; }
   .testi-author { font-size: 0.82rem; color: var(--stone); font-weight: 500; }
-  .placeholder-note { margin-top: 4px; }
+  /*
+    La aclaración va UNA vez, en la cabecera, no repetida bajo cada tarjeta.
+    Seis carteles idénticos diciendo "pendiente de sustituir" convertían la
+    sección en una obra a medio hacer; dicho una vez y arriba, se lee como lo
+    que es: una nota honesta antes de leer nada.
+
+    Lo que NO se puede hacer es quitarla del todo dejando los textos: estas
+    reseñas no las ha escrito ningún cliente, y presentar como opinión de un
+    cliente algo que nadie ha dicho es publicidad engañosa (Directiva Ómnibus,
+    traspuesta en la Ley de Competencia Desleal). El aviso se va solo, reseña a
+    reseña, según se vayan poniendo las de verdad.
+  */
+  .testi-disclaimer {
+    margin-top: 12px;
+    font-size: 0.82rem;
+    color: var(--stone);
+    line-height: 1.5;
+    max-width: 560px;
+  }
 </style>
 
 <script>

@@ -14,9 +14,10 @@
  *   Pintura façanes .......... Exteriores (Fachadas)
  *   Manteniment de fusta ..... Madera    (Mantenimiento de madera)
  *
- * ⚠️  Las categorías Parkings, Altura, Metal e Industrial vienen del encargo
- * inicial, NO de esa ficha. Ninguna fuente pública confirma que PINTURES GS
- * preste esos servicios: conviene que la empresa lo confirme o se retiren.
+ * Parkings, Altura, Metal e Industrial no salen de esa ficha, sino del encargo
+ * inicial. LA EMPRESA LAS CONFIRMÓ expresamente antes de publicar (agosto de
+ * 2026): sí presta las nueve categorías. Se anota aquí porque la duda estuvo
+ * abierta durante todo el desarrollo y no conviene que alguien la reabra.
  *
  * `photo` es la CLAVE del manifiesto de fotos (src/data/photos.ts), no una URL.
  * Para cambiar la imagen de una categoría se cambia ahí, no aquí.

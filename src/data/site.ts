@@ -26,9 +26,12 @@ export const SITE = {
    */
   legalName: 'Pintures GS',
   /**
-   * ⚠️  DOMINIO PROVISIONAL. pinturesgs.com no está registrado (comprobado:
-   * no resuelve). Hay que cambiarlo por el definitivo ANTES del primer deploy:
-   * de aquí salen la URL canónica, el sitemap y las etiquetas Open Graph.
+   * Dominio definitivo, comprado por la empresa en Vercel (agosto de 2026).
+   *
+   * ES LA ÚNICA FUENTE del dominio en todo el proyecto: de aquí salen la URL
+   * canónica, el sitemap, el robots.txt y las etiquetas Open Graph (las que se
+   * ven al compartir el enlace por WhatsApp o en redes). Cambiar esta línea
+   * cambia las cuatro cosas a la vez; no hay ningún otro sitio que tocar.
    */
   url: 'https://pinturesgs.com',
   tagline: 'Tú eliges el color. Nosotros hacemos que ocurra.',
