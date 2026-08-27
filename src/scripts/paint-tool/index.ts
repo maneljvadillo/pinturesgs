@@ -15,7 +15,7 @@
  * y borrar la retira. Para dos colores distintos hacen falta dos zonas.
  */
 import { showToast } from '~/scripts/toast';
-import { colorName } from '~/data/palette';
+import { colorName, DEFAULT_COLOR } from '~/data/palette';
 import type { FractionRect, Region, ToolName } from './types';
 import { History, cloneForWrite } from './history';
 import {
@@ -98,7 +98,6 @@ export async function initPaintTool(): Promise<void> {
   const undoBtn = document.getElementById('undoBtn') as HTMLButtonElement;
   const redoBtn = document.getElementById('redoBtn') as HTMLButtonElement;
   const resetBtn = document.getElementById('resetBtn') as HTMLButtonElement;
-  const customColor = document.getElementById('customColor') as HTMLInputElement;
   const brushDot = document.getElementById('brushDot') as HTMLElement;
   const paletteScroll = document.getElementById('paletteScroll') as HTMLElement;
   const readout = document.getElementById('swatchReadout') as HTMLElement;
@@ -128,7 +127,7 @@ export async function initPaintTool(): Promise<void> {
   let regions: Region[] = [];
   let selectedId: string | null = null;
   let currentTool: ToolName = 'rellenar';
-  let currentColor = customColor.value;
+  let currentColor = DEFAULT_COLOR;
   let nextId = 1;
   let marking = false;
   /** Último color aplicado, que es el que enseña la línea de la paleta cuando
@@ -689,7 +688,6 @@ export async function initPaintTool(): Promise<void> {
     });
   }
 
-  customColor.addEventListener('input', () => applyColor(customColor.value));
 
   // ── Comparador ──────────────────────────────────────────────────────────
   function setCompare(v: number): void {

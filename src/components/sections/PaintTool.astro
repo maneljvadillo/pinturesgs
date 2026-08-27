@@ -249,11 +249,6 @@ const TOOLS = [
       >
         Ver más colores <span class="pm-n">({PALETTE.length - VISIBLE_GROUPS} familias más)</span>
       </button>
-
-      <div class="custom-color-row">
-        <input type="color" id="customColor" value="#C1502E" aria-label="Color personalizado" />
-        <span>Color personalizado</span>
-      </div>
     </div>
   </div>
 </section>
@@ -604,24 +599,6 @@ const TOOLS = [
     .combo-dot { height: 22px; }
   }
 
-  .custom-color-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 8px;
-    padding-top: 14px;
-    border-top: 1px solid var(--stone-light);
-  }
-  .custom-color-row input[type='color'] {
-    width: 34px; height: 34px;
-    border: none;
-    border-radius: 8px;
-    overflow: hidden;
-    cursor: pointer;
-    padding: 0;
-    background: none;
-  }
-  .custom-color-row span { font-size: 0.76rem; color: var(--stone); }
 
 </style>
 

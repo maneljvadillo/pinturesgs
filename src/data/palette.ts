@@ -213,6 +213,16 @@ export function colorName(hex: string): string {
 }
 
 /**
+ * El color con el que arranca la herramienta.
+ *
+ * Tiene que ser uno DEL CATÁLOGO. Antes salía del selector de color libre, que
+ * venía con un `#C1502E` que no está en ninguna familia: la línea del nombre
+ * lo llamaba "Color personalizado", que no le sirve a nadie para encargar
+ * nada. Éste tiene nombre, así que se puede pedir por teléfono.
+ */
+export const DEFAULT_COLOR = '#C4714F'; // Terracota Media
+
+/**
  * COMBINACIONES PARA LAS TRES ZONAS
  *
  * La pregunta que trae a la gente a esta herramienta no es "¿qué color me
