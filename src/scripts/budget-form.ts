@@ -140,18 +140,21 @@ export function initBudgetForm(): void {
     falta (o el visitante las adjunte a mano en el chat).
   */
   const waBtn = document.getElementById('waBtn') as HTMLButtonElement | null;
-  waBtn?.addEventListener('click', () => {
+
+  /** Abre WhatsApp con la solicitud ya escrita. Devuelve false si falta algo. */
+  function enviarPorWhatsApp(): boolean {
+    if (!waBtn) return false;
     const obligatorios = ['nombre', 'telefono', 'email', 'tipo'];
     const primerFallo = obligatorios.find((n) => !validateField(n));
     if (primerFallo) {
-      form.querySelector<HTMLElement>(`[name="${primerFallo}"]`)?.focus();
+      form!.querySelector<HTMLElement>(`[name="${primerFallo}"]`)?.focus();
       statusEl.className = 'form-status full error';
       statusEl.textContent = 'Completa nombre, teléfono, email y tipo antes de enviar.';
-      return;
+      return false;
     }
 
     const val = (n: string) =>
-      (form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[name="${n}"]`)?.value ?? '').trim();
+      (form!.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[name="${n}"]`)?.value ?? '').trim();
 
     const tel = normalizePhone(val('telefono'));
     const nFotos = fileInput.files?.length ?? 0;
@@ -176,7 +179,10 @@ export function initBudgetForm(): void {
       '_blank',
       'noopener,noreferrer',
     );
-  });
+    return true;
+  }
+
+  waBtn?.addEventListener('click', () => { enviarPorWhatsApp(); });
 
   // ── Envío ─────────────────────────────────────────────────────────────
   form.addEventListener('submit', async (e) => {
@@ -207,12 +213,30 @@ export function initBudgetForm(): void {
         headers: { Accept: 'application/json' },
       });
       const data = (await res.json().catch(() => ({}))) as {
-        ok?: boolean; message?: string; errors?: Record<string, string>;
+        ok?: boolean; message?: string; errors?: Record<string, string>; via?: string;
       };
 
       if (!res.ok || !data.ok) {
         if (data.errors) {
           for (const [name, msg] of Object.entries(data.errors)) setError(name, msg);
+        }
+        /*
+          El servidor puede decir que hay otra salida. Pasa cuando el correo
+          no está configurado: en vez de dejar al cliente delante de un error
+          rojo sin nada que hacer, se le termina la solicitud por WhatsApp con
+          todo lo que ya había escrito.
+
+          No se abre WhatsApp solo: entre el clic y esta respuesta hay una
+          espera, y los navegadores bloquean las ventanas que se abren fuera
+          de un gesto del usuario. Se le pide un clic más, que además es lo
+          honesto: nadie quiere que una web le abra WhatsApp sin avisar.
+        */
+        if (data.via === 'whatsapp' && waBtn) {
+          statusEl.className = 'form-status full';
+          statusEl.textContent = data.message ?? 'Termínalo por WhatsApp y nos llega al momento.';
+          waBtn.classList.add('urge');
+          waBtn.focus();
+          return;
         }
         statusEl.className = 'form-status full error';
         statusEl.textContent = data.message ?? 'No hemos podido enviar la solicitud. Inténtalo de nuevo.';

@@ -183,6 +183,23 @@ const waNumber = CONTACT.whatsapp.pending ? '' : CONTACT.whatsapp.value;
     transition: background .2s ease, color .2s ease;
   }
   .btn-wa:hover, .btn-wa:focus-visible { background: #25D366; color: var(--ink); }
+  /*
+    Cuando el servidor no puede recibir el correo, el botón de WhatsApp deja
+    de ser la segunda opción y pasa a ser LA opción: se rellena para que se
+    vea a la primera cuál es el siguiente paso.
+  */
+  .btn-wa.urge {
+    background: #25D366;
+    color: var(--ink);
+    box-shadow: 0 0 0 4px rgba(37, 211, 102, .25);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-wa.urge { animation: waLatido 1.6s ease-in-out 3; }
+    @keyframes waLatido {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(37, 211, 102, .25); }
+      50%      { box-shadow: 0 0 0 9px rgba(37, 211, 102, .12); }
+    }
+  }
 
   .form-grid {
     display: grid;

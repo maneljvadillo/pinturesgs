@@ -28,9 +28,15 @@ const json = (body: unknown, status = 200) =>
 export const POST: APIRoute = async ({ request }) => {
   const wantsJson = request.headers.get('accept')?.includes('application/json');
 
-  const fail = (message: string, status = 400, errors?: Record<string, string>) =>
+  const fail = (
+    message: string,
+    status = 400,
+    errors?: Record<string, string>,
+    /** Salida alternativa que el navegador puede ofrecer. Hoy sólo 'whatsapp'. */
+    via?: 'whatsapp',
+  ) =>
     wantsJson
-      ? json({ ok: false, message, errors }, status)
+      ? json({ ok: false, message, errors, via }, status)
       : new Response(message, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 
   let form: FormData;
@@ -111,10 +117,17 @@ export const POST: APIRoute = async ({ request }) => {
   */
   if (import.meta.env.PROD && !mailerIsLive()) {
     console.error('[presupuesto] RESEND_API_KEY sin configurar en producción: no se puede entregar la solicitud.');
+    /*
+      `via: 'whatsapp'` le dice al navegador que esto NO es un error del que
+      no se pueda salir: que ofrezca terminar por WhatsApp, con los datos ya
+      escritos. Un error rojo y punto deja al cliente sin salida, y en una web
+      de empresa eso es un cliente perdido.
+    */
     return fail(
-      `No hemos podido enviar tu solicitud. Escríbenos directamente a ${CONTACT.email.value}` +
-        (CONTACT.whatsapp.pending ? '.' : ' o por WhatsApp.'),
+      'Ahora mismo no podemos recibirlo por correo. Termínalo por WhatsApp y nos llega al momento.',
       503,
+      undefined,
+      CONTACT.whatsapp.pending ? undefined : 'whatsapp',
     );
   }
 
