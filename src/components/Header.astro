@@ -169,6 +169,39 @@ const links = [
   header.on-dark-top:not(.solid) .nav-links:not(.open) .nav-cta { border-color: var(--gesso); }
 
   @media (max-width: 900px) {
+    /*
+      ── El menú abierto a mitad de página ──────────────────────────────
+      `header.solid` lleva `backdrop-filter` para difuminar lo que pasa por
+      debajo de la barra. El problema es que un elemento con `backdrop-filter`
+      (igual que con `filter` o `transform`) se convierte en el BLOQUE
+      CONTENEDOR de sus descendientes `position: fixed`. Y el desplegable es
+      hijo del header.
+
+      Resultado: en cuanto se bajaba un poco —que es cuando el header se
+      vuelve sólido— el `inset: 0` del menú dejaba de medir la pantalla y
+      pasaba a medir la barra del header, de 66 px de alto. El panel se
+      quedaba del tamaño de la barra y los enlaces se salían por abajo,
+      sueltos y sin fondo, encima del contenido de la página. Arriba del todo
+      no pasaba, porque ahí el header todavía no es `.solid`: por eso el fallo
+      sólo aparecía a mitad de página.
+
+      Con el menú abierto no hay nada que difuminar —el panel tapa la pantalla
+      entera—, así que se apaga y el `fixed` vuelve a referirse a la pantalla.
+      La especificidad de `.nav-open.solid` (dos clases) gana a `.solid`.
+
+      ⚠️  No añadir `transform`, `filter`, `perspective` ni `contain` al
+      header sin apagarlos también aquí: cualquiera de ellos reproduce el
+      mismo fallo.
+    */
+    header.nav-open,
+    header.nav-open.solid {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+    /* El filete de progreso se pinta por encima del panel y lo cruza con una
+       raya de colores. Con el menú abierto no pinta nada. */
+    header.nav-open .head-progress { display: none; }
+
     .nav-links {
       position: fixed;
       inset: 0;

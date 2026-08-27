@@ -20,6 +20,12 @@ export function initNav(): void {
 
   const setOpen = (open: boolean) => {
     links.classList.toggle('open', open);
+    /*
+      El header se marca mientras el menú está abierto porque el CSS necesita
+      apagarle el `backdrop-filter`. Ver la explicación larga en Header.astro:
+      en resumen, esa propiedad rompe el `position: fixed` del desplegable.
+    */
+    header.classList.toggle('nav-open', open);
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
     // Con el menú a pantalla completa, el fondo no debe poder desplazarse.

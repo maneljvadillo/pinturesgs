@@ -31,19 +31,22 @@ h1, h2, h3 {
   letter-spacing: -0.01em;
   text-wrap: balance;
   /*
-    Sin ligaduras comunes.
+    ── El tamaño óptico, fijado a mano ──────────────────────────────────
+    Fraunces es una fuente variable con eje `opsz`: no dibuja las letras
+    igual a cuerpo pequeño que a cuerpo de titular. Dejándolo en automático,
+    el navegador escoge el corte extremo, y en ese corte la `f` pierde el
+    travesaño: queda un palo con un gancho torcido que no se lee como una
+    efe. En "Transformamos" cantaba muchísimo.
 
-    Fraunces sustituye ciertas parejas por un glifo único, y la de `f` + `o`
-    sale fundida: en "Transformamos", el brazo de la f se enganchaba con la o
-    y las dos letras se leían como una sola forma rara. A tamaño de titular
-    —54 px en el hero— no es un detalle tipográfico, se ve a la primera.
+    Comparado en pantalla a tamaño real: con `opsz` en automático la efe sale
+    sin travesaño; fijándolo entre 16 y 24 aparece y la letra se lee bien. Se
+    elige 24 porque conserva la elegancia del corte de titular sin llegar al
+    punto donde el trazo fino desaparece.
 
-    Se apagan sólo las COMUNES (`liga` y `clig`), no todas: eso deja fuera la
-    pareja problemática sin tocar nada más de la fuente. Va en los titulares y
-    no en el texto corrido porque es donde el tamaño lo delata; en cuerpo
-    pequeño las ligaduras hacen su trabajo y no molestan.
+    Sólo afecta a los titulares (serif). El texto corrido usa Inter, que no
+    tiene este eje.
   */
-  font-variant-ligatures: no-common-ligatures;
+  font-variation-settings: 'opsz' 24;
 }
 
 /* ── Accesibilidad ────────────────────────────────────────────────────── */
