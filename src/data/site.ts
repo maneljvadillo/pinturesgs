@@ -67,12 +67,10 @@ export const CONTACT = {
   /** Formato E.164, para los enlaces tel: y wa.me. Sin el + ni espacios en whatsapp. */
   phoneHref: real('+376608908'),
   /**
-   * ⚠️  A CONFIRMAR POR LA EMPRESA. Es el mismo número de arriba, que sale de
-   * su ficha pública. Que ESE número tenga WhatsApp no está verificado por
-   * ninguna fuente: se ha activado porque el cliente pidió que el formulario
-   * pueda enviarse por WhatsApp y es el único número que hay. Si no es el
-   * correcto, se cambia aquí y cambia en todo el sitio (botón flotante y
-   * botón del formulario).
+   * CONFIRMADO POR LA EMPRESA (agosto de 2026): este número tiene WhatsApp.
+   * Es el mismo teléfono de arriba. De aquí salen el botón flotante y el
+   * botón "Enviar por WhatsApp" del formulario; cambiarlo aquí los cambia
+   * los dos.
    */
   whatsapp: real('376608908'),
   // Facilitado por la empresa.

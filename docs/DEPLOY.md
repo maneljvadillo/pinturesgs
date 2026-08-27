@@ -16,7 +16,8 @@ Estado a fecha del lanzamiento (agosto de 2026).
       etiquetas Open Graph.
 - [x] **Categorías de servicio.** La empresa confirmó que presta las nueve,
       incluidas Parkings, Altura, Metal e Industrial.
-- [x] **Teléfono y WhatsApp.** `(+376) 608 908`. Ver el aviso de abajo.
+- [x] **Teléfono y WhatsApp.** `(+376) 608 908`, confirmado por la empresa,
+      y confirmado que ese número tiene WhatsApp.
 - [x] `npm run check` y `npm run build` sin errores.
 
 ### Pendiente — hace falta la empresa
@@ -29,10 +30,6 @@ Estado a fecha del lanzamiento (agosto de 2026).
 - [ ] **Remitente verificado.** `BUDGET_MAIL_FROM` tiene que ser una dirección
       de un dominio verificado en Resend (p. ej. `presupuestos@pinturesgs.com`).
       El `onboarding@resend.dev` de prueba sólo entrega al dueño de la cuenta.
-- [ ] **⚠️ Confirmar que el 608 908 tiene WhatsApp.** El botón flotante y el
-      del formulario ya abren `wa.me/376608908`. El número sale de la ficha
-      pública de la empresa, pero que TENGA WhatsApp no lo confirma ninguna
-      fuente. Si no es el bueno, se cambia `CONTACT.whatsapp` en `site.ts`.
 - [ ] **Reseñas reales.** Las seis de la home son de ejemplo y la sección lo
       dice ("Ejemplos ilustrativos… estamos recogiendo las opiniones"). En
       cuanto haya reseñas de verdad: se sustituye el texto en
