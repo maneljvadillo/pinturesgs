@@ -101,6 +101,8 @@ export async function initPaintTool(): Promise<void> {
   const resetBtn = document.getElementById('resetBtn') as HTMLButtonElement;
   const customColor = document.getElementById('customColor') as HTMLInputElement;
   const brushDot = document.getElementById('brushDot') as HTMLElement;
+  const paletteScroll = document.getElementById('paletteScroll') as HTMLElement;
+  const readout = document.getElementById('swatchReadout') as HTMLElement;
 
   const outCtx = ctx2d(canvas);
   const scratch = makeCanvas(W, H);
@@ -130,6 +132,10 @@ export async function initPaintTool(): Promise<void> {
   let currentColor = customColor.value;
   let nextId = 1;
   let marking = false;
+  /** Último color aplicado, que es el que enseña la línea de la paleta cuando
+   *  no se está señalando ninguna muestra. Declarado aquí arriba con el resto
+   *  del estado: `applyColor` lo escribe y vive mucho antes en el archivo. */
+  let lastApplied: { hex: string; name: string } | null = null;
   /** Índice de zona por píxel (0 = ninguna), para saber qué hay bajo el cursor. */
   let idMap = new Uint8Array(W * H);
 
@@ -295,6 +301,8 @@ export async function initPaintTool(): Promise<void> {
     if (!r) { showToast('Primero selecciona una zona.'); return; }
     currentColor = hex;
     syncBrush();
+    lastApplied = { hex, name: colorName(hex) };
+    showInReadout(hex, lastApplied.name, true);
     document.querySelectorAll('.swatch-cell.active').forEach((c) => c.classList.remove('active'));
     cell?.classList.add('active');
 
@@ -592,6 +600,49 @@ export async function initPaintTool(): Promise<void> {
   // ── Paleta ──────────────────────────────────────────────────────────────
   document.querySelectorAll<HTMLElement>('.swatch-cell').forEach((cell) => {
     cell.addEventListener('click', () => applyColor(cell.dataset.hex!, cell));
+  });
+
+  /*
+    ── EL NOMBRE DEL COLOR SEÑALADO ──────────────────────────────────────
+    Las muestras ya no llevan rótulo debajo (son 272 y no cabrían), así que el
+    nombre y el código se leen aquí arriba, del que se está señalando.
+
+    Los oyentes van en el CONTENEDOR, no en cada muestra: 272 pares de oyentes
+    para algo que sólo cambia un texto no tienen ninguna justificación, y con
+    delegación funciona igual.
+
+    Al soltar el ratón vuelve a mostrarse el último color APLICADO, que es la
+    información que de verdad hay que poder copiar. En el móvil no hay puntero
+    que señale, así que allí esta línea dice directamente lo que se ha aplicado.
+  */
+  function showInReadout(hex: string, name: string, applied: boolean): void {
+    readout.classList.add('on');
+    (readout.querySelector('.ro-sq') as HTMLElement).style.background = hex;
+    const txt = readout.querySelector('.ro-text')!;
+    txt.textContent = `${applied ? 'Aplicado: ' : ''}${name} `;
+    const code = document.createElement('span');
+    code.className = 'ro-hex';
+    code.textContent = hex.toUpperCase();
+    txt.appendChild(code);
+  }
+
+  function restoreReadout(): void {
+    if (lastApplied) showInReadout(lastApplied.hex, lastApplied.name, true);
+    else {
+      readout.classList.remove('on');
+      readout.querySelector('.ro-text')!.textContent = 'Señala un color para ver su nombre';
+    }
+  }
+
+  paletteScroll.addEventListener('pointerover', (e) => {
+    const cell = (e.target as HTMLElement).closest<HTMLElement>('.swatch-cell');
+    if (cell) showInReadout(cell.dataset.hex!, cell.dataset.name!, false);
+  });
+  paletteScroll.addEventListener('pointerleave', restoreReadout);
+  // Con teclado el foco hace el papel del puntero.
+  paletteScroll.addEventListener('focusin', (e) => {
+    const cell = (e.target as HTMLElement).closest<HTMLElement>('.swatch-cell');
+    if (cell) showInReadout(cell.dataset.hex!, cell.dataset.name!, false);
   });
 
   /*

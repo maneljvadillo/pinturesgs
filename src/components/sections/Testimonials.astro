@@ -2,6 +2,18 @@
 /**
  * TESTIMONIOS — marcados explícitamente como ejemplo mientras no haya reseñas
  * reales. No se publica como opinión de un cliente algo que nadie ha dicho.
+ *
+ * ── Dos formas según la pantalla ──────────────────────────────────────────
+ *   ESCRITORIO   rejilla de tres columnas: se leen todas de un vistazo.
+ *   MÓVIL        carrusel horizontal con flechas.
+ *
+ * Apiladas en una sola columna, ocho testimonios eran ocho pantallazos de
+ * scroll seguidos, y nadie baja hasta el octavo: la sección se convertía en un
+ * muro que hay que pasar para llegar al presupuesto. En horizontal se ve una y
+ * se pasa a la siguiente sólo si apetece.
+ *
+ * El carrusel es CSS (`scroll-snap`), así que arrastrando funciona aunque el
+ * JavaScript no llegue; las flechas las mueve testi-carousel.ts.
  */
 import { TESTIMONIALS } from '~/data/testimonials';
 
@@ -15,8 +27,9 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
       <h2>Lo que dicen quienes ya han confiado en nosotros.</h2>
     </div>
 
-    <ul class="testi-grid">
-      {TESTIMONIALS.map((t, i) => (
+    <div class="testi-viewport">
+      <ul class="testi-grid" id="testiTrack">
+        {TESTIMONIALS.map((t, i) => (
         <li
           class="testi-card"
           data-reveal
@@ -34,7 +47,20 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
           )}
         </li>
       ))}
-    </ul>
+      </ul>
+
+      <!--
+        Las flechas están FUERA de la lista y sólo se ven en móvil. Van
+        ocultas de partida: si el carrusel no se puede desplazar, el script no
+        las enseña, y si el script no llega no aparecen flechas muertas.
+      -->
+      <button type="button" class="testi-arrow prev" id="testiPrev" aria-label="Ver el testimonio anterior" hidden>
+        <span aria-hidden="true">‹</span>
+      </button>
+      <button type="button" class="testi-arrow next" id="testiNext" aria-label="Ver más testimonios" hidden>
+        <span aria-hidden="true">›</span>
+      </button>
+    </div>
   </div>
 </section>
 
@@ -52,7 +78,77 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
     margin-top: 50px;
     list-style: none;
   }
-  @media (max-width: 900px) { .testi-grid { grid-template-columns: 1fr; } }
+  .testi-viewport { position: relative; }
+
+  /*
+    ── MÓVIL: carrusel ─────────────────────────────────────────────────
+    De rejilla a fila. `scroll-snap` hace que cada tarjeta se centre sola al
+    soltar, que es lo que separa un carrusel de una fila que se desplaza.
+
+    Las tarjetas ocupan el 84%: el 16% que sobra deja asomar la siguiente por
+    el borde, y eso —más que cualquier flecha— es lo que cuenta que hay más.
+
+    El `padding` lateral y el `scroll-padding` van juntos: el primero centra la
+    primera y la última tarjeta en vez de dejarlas pegadas al canto, y el
+    segundo hace que el imán las pare en ese mismo sitio.
+  */
+  @media (max-width: 900px) {
+    .testi-grid {
+      display: flex;
+      grid-template-columns: none;
+      gap: 14px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding: 0 8%;
+      padding: 4px 8% 10px;
+      /* El carrusel se sale del ancho del `.wrap` a propósito: sangrar el
+         contenedor y no las tarjetas es lo que permite que la siguiente se
+         asome por el borde de la pantalla. */
+      margin: 40px calc(var(--wrap-pad) * -1) 0;
+      /* Sin barra a la vista: ya lo cuentan las flechas y la tarjeta asomada. */
+      scrollbar-width: none;
+      /* En iOS el rebote horizontal dentro de la página marea; se corta. */
+      overscroll-behavior-x: contain;
+    }
+    .testi-grid::-webkit-scrollbar { display: none; }
+    .testi-card {
+      flex: 0 0 84%;
+      scroll-snap-align: center;
+    }
+    /* Sin ratón, el `hover` que levanta la tarjeta no aporta nada, y en táctil
+       se queda pegado después del toque como si estuviera seleccionada. */
+    .testi-card:hover { transform: none; box-shadow: none; }
+  }
+
+  /*
+    Las flechas. Redondas, pegadas a los bordes del carrusel y sólo en móvil.
+    48 px de lado: por encima del mínimo de zona pulsable que pide la WCAG y
+    del tamaño de un pulgar.
+  */
+  .testi-arrow { display: none; }
+  @media (max-width: 900px) {
+    .testi-arrow {
+      display: grid;
+      place-items: center;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--stone-light);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+    }
+    .testi-arrow[hidden] { display: none; }
+    .testi-arrow.prev { left: 2px; }
+    .testi-arrow.next { right: 2px; }
+    .testi-arrow:active { background: var(--ink); color: #fff; }
+  }
 
   /* Cada tarjeta lleva su franja de pintura arriba y se levanta un poco al
      pasar por encima. Nada más: es una opinión, no un anuncio. */
@@ -89,3 +185,8 @@ const ACCENTS = ['orange', 'turq', 'pink', 'green', 'blue', 'purple'];
   .testi-author { font-size: 0.82rem; color: var(--stone); font-weight: 500; }
   .placeholder-note { margin-top: 4px; }
 </style>
+
+<script>
+  import { initTestiCarousel } from '~/scripts/testi-carousel';
+  initTestiCarousel();
+</script>

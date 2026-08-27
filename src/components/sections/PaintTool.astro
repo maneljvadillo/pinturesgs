@@ -13,7 +13,7 @@
  * arrastrando un rectángulo: NO hay detección automática de zonas nuevas, eso
  * exigiría una API externa de segmentación (ver docs/MEJORAS-FUTURAS.md).
  *
- * La paleta y las combinaciones se renderizan en el servidor: son 78 muestras
+ * La paleta y las combinaciones se renderizan en el servidor: son 272 muestras
  * y montarlas con JavaScript retrasaría la interacción sin ninguna ventaja.
  */
 import { getImage } from 'astro:assets';
@@ -176,7 +176,22 @@ const TOOLS = [
         <p class="pt-card-sub">O zona a zona. Zona seleccionada:</p>
         <div class="wall-picker" id="wallPicker"></div>
 
-        <div class="palette-scroll">
+        <!--
+          El nombre y el código NO van debajo de cada muestra: van aquí, en una
+          sola línea, para el color que se está señalando. Con más de doscientos
+          colores, repetir el rótulo en cada uno obligaba a hacer las muestras
+          grandes —cuatro por fila— y a recortar los nombres largos igualmente.
+          Así caben trece por fila y el nombre se lee entero.
+
+          Sigue siendo información visual: cada botón lleva su `aria-label` con
+          el nombre, así que un lector de pantalla ya lo dice sin esta línea.
+        -->
+        <p class="swatch-readout" id="swatchReadout" aria-hidden="true">
+          <span class="ro-sq"></span>
+          <span class="ro-text">Señala un color para ver su nombre</span>
+        </p>
+
+        <div class="palette-scroll" id="paletteScroll">
           {PALETTE.map((group) => (
             <div class="palette-group">
               <h4>{group.group}</h4>
@@ -189,11 +204,8 @@ const TOOLS = [
                     data-name={c.name}
                     title={`${c.name} · ${c.hex}`}
                     aria-label={`Aplicar ${c.name}`}
-                  >
-                    <span class="swatch-sq" style={`background:${c.hex}`}></span>
-                    <span class="swatch-name">{c.name}</span>
-                    <span class="swatch-hex">{c.hex}</span>
-                  </button>
+                    style={`background:${c.hex}`}
+                  ></button>
                 ))}
               </div>
             </div>
@@ -350,61 +362,85 @@ const TOOLS = [
   .wall-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 
   /* ── Paleta ───────────────────────────────────────────────────────── */
-  .palette-scroll { max-height: 340px; overflow-y: auto; padding-right: 6px; }
-  .palette-group { margin-bottom: 16px; }
+  .palette-scroll { max-height: 420px; overflow-y: auto; padding-right: 6px; }
+  .palette-group { margin-bottom: 14px; }
   .palette-group h4 {
     font-family: var(--sans);
     font-size: 0.68rem;
     font-weight: 500;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
     color: var(--stone);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  /* Cuatro columnas en vez de seis: con seis, el nombre no cabía y había que
-     recortarlo con puntos suspensivos. */
-  .swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 8px; }
-  @media (max-width: 420px) { .swatch-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /*
+    ── LAS MUESTRAS ────────────────────────────────────────────────────
+    Muestras pequeñas y muchas. Antes eran cuatro por fila porque cada una
+    cargaba con su nombre y su código debajo, y los nombres largos no cabían de
+    otra manera; con la carta entera —más de doscientos colores— eso era una
+    lista interminable. Ahora el rótulo se ha ido a una sola línea arriba
+    (`.swatch-readout`) y la muestra es sólo color.
+
+    `auto-fill` con un mínimo de 28 px: caben las que quepan en el ancho que
+    haya, sin una consulta de medios por cada tamaño de tarjeta. Y 28 px no es
+    un número redondo cualquiera — la WCAG 2.2 pide 24x24 px de zona pulsable
+    como mínimo, así que por debajo de ahí no se puede bajar por mucho que se
+    quieran meter más colores por fila.
+  */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+    gap: 6px;
+  }
 
   .swatch-cell {
     cursor: pointer;
-    text-align: center;
-    background: none;
-    border: none;
-    padding: 0;
-    display: block;
-  }
-  .swatch-sq {
-    display: block;
-    width: 100%;
     aspect-ratio: 1 / 1;
-    border-radius: 6px;
+    padding: 0;
     border: 2px solid transparent;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    border-radius: 5px;
+    /* El filete interior despega del fondo a los blancos y a los cremas, que
+       si no parecen huecos en la rejilla. */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
     transition: transform .15s ease, border-color .15s ease;
   }
-  .swatch-cell:hover .swatch-sq { transform: scale(1.08); }
-  .swatch-cell.active .swatch-sq { border-color: var(--ink); transform: scale(1.1); }
-  /*
-    El nombre y el código van a la vista y sin recortar. Quien llega aquí viene
-    a por el color: si le gusta uno, tiene que poder decir "quiero el Verde
-    Selva, el #1E3A2F" por teléfono sin tener que adivinar cómo se llamaba.
-  */
-  .swatch-name {
-    display: block;
-    font-size: 0.68rem;
-    color: var(--ink);
-    margin-top: 5px;
-    line-height: 1.2;
-    /* Dos líneas como mucho; los nombres largos no se cortan a mitad. */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  .swatch-cell:hover,
+  .swatch-cell:focus-visible { transform: scale(1.18); z-index: 1; }
+  .swatch-cell.active {
+    border-color: var(--ink);
+    transform: scale(1.18);
+    /* El aro blanco separa el borde negro del color de al lado: sobre una
+       rejilla apretada, sin él no se distingue cuál está elegido. */
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9);
   }
-  .swatch-hex {
-    display: block;
-    font-size: 0.58rem;
+
+  /*
+    Quien llega aquí viene a por el color: si le gusta uno tiene que poder
+    decir "quiero el Verde Selva, el #1E3A2F" por teléfono. El nombre y el
+    código siguen a la vista, pero del color SEÑALADO, no de los doscientos a
+    la vez.
+  */
+  .swatch-readout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 26px;
+    margin-bottom: 9px;
+    font-size: 0.72rem;
+    color: var(--ink);
+  }
+  .swatch-readout .ro-sq {
+    width: 16px; height: 16px;
+    flex: none;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+    background: transparent;
+    /* Sin color señalado no hay cuadrito: sólo el texto de ayuda. */
+    display: none;
+  }
+  .swatch-readout.on .ro-sq { display: block; }
+  .swatch-readout .ro-hex {
     color: var(--stone);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
