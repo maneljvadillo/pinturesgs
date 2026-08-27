@@ -7,7 +7,7 @@
  * preferible un dato ausente a un dato inventado, y Google penaliza los datos
  * estructurados que no se corresponden con lo que se ve en la página.
  */
-import { SITE, CONTACT } from '~/data/site';
+import { SITE, CONTACT, SOCIAL } from '~/data/site';
 import { SERVICES } from '~/data/services';
 
 interface Props {
@@ -40,6 +40,12 @@ const jsonLd = {
   // Sólo se publican los datos de contacto que ya son reales.
   ...(CONTACT.phoneHref.pending ? {} : { telephone: CONTACT.phoneHref.value }),
   ...(CONTACT.email.pending ? {} : { email: CONTACT.email.value }),
+  /*
+    `sameAs` es donde Google espera encontrar los perfiles oficiales de la
+    empresa. Sirve para que relacione la web con el Instagram y no los trate
+    como dos negocios distintos.
+  */
+  ...(SOCIAL.length > 0 ? { sameAs: SOCIAL.map((r) => r.url) } : {}),
   /*
     El ámbito va como `areaServed`, NO como `address`: lo único que consta es
     el territorio ("Principat d'Andorra"), y no hay dirección postal de la

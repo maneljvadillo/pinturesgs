@@ -6,7 +6,10 @@
  * es un <form> normal con method="post". Con JS activado se intercepta para
  * enviarlo por fetch, mostrar estados y no perder la posición en la página.
  */
-import { PROJECT_TYPES } from '~/data/site';
+import { PROJECT_TYPES, PHONE_CC, PHONE_COUNTRY, CONTACT } from '~/data/site';
+
+/* El botón de WhatsApp sólo aparece si hay número al que escribir. */
+const waNumber = CONTACT.whatsapp.pending ? '' : CONTACT.whatsapp.value;
 ---
 
 <section class="budget on-dark" id="presupuesto">
@@ -26,25 +29,47 @@ import { PROJECT_TYPES } from '~/data/site';
       novalidate
     >
       <div class="field">
-        <label for="f-nombre">Nombre</label>
+        <label for="f-nombre">Nombre <span class="req" aria-hidden="true">*</span></label>
         <input id="f-nombre" name="nombre" type="text" placeholder="Tu nombre" required autocomplete="name" />
         <p class="field-error" data-error-for="nombre"></p>
       </div>
 
+      <!--
+        El prefijo +376 va FIJO al lado del campo, no dentro. Escrito dentro
+        como marcador de posición desaparece en cuanto se empieza a teclear,
+        y entonces ya nadie sabe si hay que repetirlo o no. Fijo, se ve
+        siempre y sólo hay que poner las seis cifras.
+
+        El campo no queda encerrado en Andorra: quien tenga número de fuera
+        puede escribirlo entero con su +, y el servidor lo acepta igual.
+      -->
       <div class="field">
-        <label for="f-telefono">Teléfono</label>
-        <input id="f-telefono" name="telefono" type="tel" placeholder="+34 600 000 000" required autocomplete="tel" />
+        <label for="f-telefono">Teléfono <span class="req" aria-hidden="true">*</span></label>
+        <div class="tel-group">
+          <span class="tel-cc" aria-hidden="true">{PHONE_CC}</span>
+          <input
+            id="f-telefono"
+            name="telefono"
+            type="tel"
+            placeholder="612 345"
+            required
+            autocomplete="tel-national"
+            inputmode="tel"
+            aria-describedby="tel-hint"
+          />
+        </div>
+        <p class="field-hint" id="tel-hint">Número de {PHONE_COUNTRY} (6 cifras). ¿Llamas desde fuera? Escríbelo con su prefijo.</p>
         <p class="field-error" data-error-for="telefono"></p>
       </div>
 
       <div class="field">
-        <label for="f-email">Email</label>
+        <label for="f-email">Email <span class="req" aria-hidden="true">*</span></label>
         <input id="f-email" name="email" type="email" placeholder="tucorreo@email.com" required autocomplete="email" />
         <p class="field-error" data-error-for="email"></p>
       </div>
 
       <div class="field">
-        <label for="f-tipo">Tipo de proyecto</label>
+        <label for="f-tipo">Tipo de proyecto <span class="req" aria-hidden="true">*</span></label>
         <select id="f-tipo" name="tipo" required>
           {PROJECT_TYPES.map((t) => <option value={t}>{t}</option>)}
         </select>
@@ -52,19 +77,19 @@ import { PROJECT_TYPES } from '~/data/site';
       </div>
 
       <div class="field full">
-        <label for="f-ubicacion">Ubicación</label>
+        <label for="f-ubicacion">Ubicación <span class="opt">(opcional)</span></label>
         <input id="f-ubicacion" name="ubicacion" type="text" placeholder="Ciudad / dirección aproximada" autocomplete="address-level2" />
         <p class="field-error" data-error-for="ubicacion"></p>
       </div>
 
       <div class="field full">
-        <label for="f-descripcion">Descripción</label>
+        <label for="f-descripcion">Descripción <span class="opt">(opcional)</span></label>
         <textarea id="f-descripcion" name="descripcion" rows="4" placeholder="Cuéntanos qué necesitas pintar..."></textarea>
         <p class="field-error" data-error-for="descripcion"></p>
       </div>
 
       <div class="field full">
-        <label for="f-fotos">Adjuntar fotografías</label>
+        <label for="f-fotos">Adjuntar fotografías <span class="opt">(opcional)</span></label>
         <input id="f-fotos" name="fotos" type="file" accept="image/*" multiple class="sr-only" />
         <label class="file-field" for="f-fotos" id="fileDrop">
           <span id="fileLabel">Haz clic o arrastra tus imágenes aquí</span>
@@ -90,8 +115,21 @@ import { PROJECT_TYPES } from '~/data/site';
         <div class="form-context-chip" id="formContextChip"></div>
       </div>
 
+      <p class="req-note full"><span class="req" aria-hidden="true">*</span> Campos obligatorios.</p>
+
       <div class="submit-row full">
         <button type="submit" class="btn-paint light" id="submitBtn">Solicitar presupuesto</button>
+        {waNumber && (
+          <button type="button" class="btn-wa" id="waBtn" data-wa={waNumber}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.4c1.4.7 3 1.1 4.8 1.1 5.5 0 10-4.5 10-10S17.5 2 12 2z"
+                stroke="currentColor" stroke-width="1.5" />
+              <path d="M8.5 8.8c.2-.5.5-.5.8-.5h.6c.2 0 .5 0 .7.5.3.6.9 2 1 2.1.1.2.1.4 0 .6-.1.2-.2.3-.4.5-.2.2-.4.4-.2.7.2.4 1 1.6 2.2 2.3.6.4 1 .3 1.3 0 .3-.3.6-.7.9-.7.2 0 .5.1.9.4.4.3 1.4.8 1.5 1 .2.2.2.5.1.9-.1.4-.9 1.2-1.6 1.4-.6.2-1.3.3-3.5-.7-2.7-1.2-4.4-4-4.6-4.2-.1-.2-1.2-1.6-1.2-3 0-1.4.7-2 1-2.3z"
+                fill="currentColor" />
+            </svg>
+            Enviar por WhatsApp
+          </button>
+        )}
         <span class="submit-note">Te responderemos lo antes posible.</span>
       </div>
 
@@ -110,6 +148,48 @@ import { PROJECT_TYPES } from '~/data/site';
   .budget .section-head :global(.eyebrow) { color: #8f8b83; }
   .budget :global(h2) { color: var(--gesso); max-width: 600px; }
   .budget .section-head > :global(p) { color: #c9c5bc; }
+
+  /* Obligatorio y opcional, dichos con color y con texto: el asterisco solo
+     no se ve si el visitante no distingue bien los colores. */
+  .req { color: var(--c-pink); font-weight: 600; margin-left: 2px; }
+  .opt { color: #8f8b83; font-weight: 400; font-size: .82em; margin-left: 4px; }
+  .req-note { font-size: .74rem; color: #9c988f; margin-top: -4px; }
+
+  /* Prefijo del país, pegado al campo y sin poder editarse. */
+  .tel-group { display: flex; align-items: stretch; }
+  .tel-cc {
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: .9rem;
+    color: #c9c5bc;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-right: none;
+    border-radius: 4px 0 0 4px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .tel-group input { border-radius: 0 4px 4px 0; min-width: 0; flex: 1; }
+
+  .field-hint { font-size: .72rem; color: #9c988f; margin-top: 6px; line-height: 1.45; }
+
+  /* WhatsApp como segunda vía, no como la principal: contorno, no relleno. */
+  .btn-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 22px;
+    border: 1px solid #25D366;
+    border-radius: 4px;
+    background: transparent;
+    color: #25D366;
+    font: inherit;
+    font-size: .88rem;
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease;
+  }
+  .btn-wa:hover, .btn-wa:focus-visible { background: #25D366; color: var(--ink); }
 
   .form-grid {
     display: grid;

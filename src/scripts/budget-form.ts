@@ -8,7 +8,7 @@
 import { showToast } from '~/scripts/toast';
 import {
   MAX_FILES, MAX_TOTAL_BYTES, ACCEPTED_TYPES, LIMITS,
-  PHONE_RE, EMAIL_RE, formatBytes, DESIGN_KEY,
+  EMAIL_RE, formatBytes, DESIGN_KEY, normalizePhone, displayPhone,
 } from '~/lib/budget';
 
 type Rule = (value: string) => string | null;
@@ -23,7 +23,8 @@ const RULES: Record<string, Rule[]> = {
   ],
   telefono: [
     required('El teléfono'),
-    (v) => (PHONE_RE.test(v.trim()) ? null : 'Revisa el teléfono: parece incompleto.'),
+    // La MISMA función que usa el servidor: si aquí pasa, allí pasa.
+    (v) => (normalizePhone(v) ? null : 'Revisa el teléfono: un número de Andorra son 6 cifras.'),
   ],
   email: [
     required('El email'),
@@ -143,6 +144,60 @@ export function initBudgetForm(): void {
     if (!dt?.files.length) return;
     fileInput.files = dt.files;
     describeFiles(dt.files);
+  });
+
+  // ── Envío por WhatsApp ────────────────────────────────────────────────
+  /*
+    Segunda vía, no sustituto. Abre WhatsApp con la solicitud ya escrita: el
+    visitante sólo tiene que darle a enviar y le llega a la empresa al móvil,
+    sin depender de que el correo salga.
+
+    Se validan los mismos campos obligatorios antes de abrir nada: si no, se
+    manda un mensaje a medias y hay que perseguir al cliente para completarlo.
+
+    Las fotos NO viajan: wa.me sólo admite texto. Por eso se avisa en el
+    mensaje de que hay imágenes, para que la empresa las pida si le hacen
+    falta (o el visitante las adjunte a mano en el chat).
+  */
+  const waBtn = document.getElementById('waBtn') as HTMLButtonElement | null;
+  waBtn?.addEventListener('click', () => {
+    const obligatorios = ['nombre', 'telefono', 'email', 'tipo'];
+    const primerFallo = obligatorios.find((n) => !validateField(n));
+    if (primerFallo) {
+      form.querySelector<HTMLElement>(`[name="${primerFallo}"]`)?.focus();
+      statusEl.className = 'form-status full error';
+      statusEl.textContent = 'Completa nombre, teléfono, email y tipo antes de enviar.';
+      return;
+    }
+
+    const val = (n: string) =>
+      (form.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[name="${n}"]`)?.value ?? '').trim();
+
+    const tel = normalizePhone(val('telefono'));
+    const nFotos = fileInput.files?.length ?? 0;
+
+    const lineas = [
+      `Hola, quiero pedir un presupuesto.`,
+      ``,
+      `Nombre: ${val('nombre')}`,
+      `Teléfono: ${tel ? displayPhone(tel) : val('telefono')}`,
+      `Email: ${val('email')}`,
+      `Tipo de proyecto: ${val('tipo')}`,
+    ];
+    if (val('ubicacion')) lineas.push(`Ubicación: ${val('ubicacion')}`);
+    if (val('descripcion')) lineas.push(``, val('descripcion'));
+    const diseno = (document.getElementById('disenoInput') as HTMLInputElement | null)?.value;
+    if (diseno) lineas.push(``, `Mi diseño: ${diseno}`);
+    if (nFotos > 0) {
+      lineas.push(``, `(Tengo ${nFotos} ${nFotos === 1 ? 'foto' : 'fotos'} para enseñaros; os las paso por aquí.)`);
+    }
+
+    const numero = waBtn.dataset.wa!;
+    window.open(
+      `https://wa.me/${numero}?text=${encodeURIComponent(lineas.join('\n'))}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
   });
 
   // ── Envío ─────────────────────────────────────────────────────────────
