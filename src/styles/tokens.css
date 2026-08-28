@@ -115,8 +115,8 @@
 */
 @media (min-width: 901px) {
   :root {
-    --hero-intro: 3400ms;
-    --hero-impact: 2670ms;
+    --hero-intro: 4700ms;
+    --hero-impact: 4249ms;
   }
 }
 

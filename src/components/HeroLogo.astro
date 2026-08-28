@@ -325,21 +325,33 @@ const logoMask = mask.src;
     En un recorrido de tres segundos y medio la velocidad no puede caer a cero
     en ningún punto intermedio, y eso hay que repartirlo a mano:
 
-      0 -> 7%    arranca. Sale de parado y coge la velocidad de crucero.
-      7 -> 55%   crucero, y LINEAL. Una bola que rueda por un suelo llano va a
-                 velocidad casi constante; una curva de "ease" en este tramo es
-                 exactamente lo que hace que parezca que duda a mitad de camino.
-      55 -> 84%  frena. Entra a la velocidad de crucero y llega a cero justo
-                 cuando se pasa de largo un 2,6%.
-      84 -> 100% se asienta: vuelve un pelín y se para. Eso es una moneda
-                 posándose, y es lo que hace que "se quede en su sitio" en vez
-                 de apagarse.
+      0 -> 6%     arranca. Sale de parado y coge la velocidad de crucero.
+      6 -> 70%    crucero, y LINEAL. Una bola que rueda por un suelo llano va a
+                  velocidad casi constante; una curva de "ease" en este tramo es
+                  exactamente lo que hace que parezca que duda a mitad de camino.
+      70 -> 92%   frena. Es la PARÁBOLA de frenada exacta —`cubic-bezier(.333,
+                  .667, .667, 1)`, que no es un valor de catálogo sino la forma
+                  cerrada de `1-(1-t)²`—: la velocidad entra al doble de la
+                  media del tramo y baja en línea recta hasta cero, sin subir
+                  antes. Ese detalle importa: con la curva anterior la bola
+                  aceleraba un 35% justo al empezar a frenar, y eso, aunque
+                  suave, se nota como un tironcito a tres cuartos del camino.
+
+                  Que la velocidad no suba obliga a que la frenada empiece al
+                  doble de su media, y ESO es lo que fija el reparto 70/22 del
+                  tiempo. No se puede elegir el reparto y la curva por separado.
+      92 -> 100%  se asienta: vuelve un pelín y se para. Eso es una moneda
+                  posándose, y es lo que hace que "se quede en su sitio" en vez
+                  de apagarse.
 
     Las curvas de los dos empalmes no son de catálogo, están calculadas para
     que la velocidad coincida a los dos lados. Una cubic-bezier sale con
-    pendiente y1/x1 y llega con pendiente (1-y2)/(1-x2); ahí están el 1.27 con
-    el que el arranque entrega el testigo al crucero y el 1.9 con el que el
-    crucero se lo pasa a la frenada.
+    pendiente y1/x1 y llega con pendiente (1-y2)/(1-x2). Con este recorrido
+    hacen falta 1.421 al pasar de arranque a crucero —y `cubic-bezier(.4, 0,
+    .72, .6)` da 1.429— y 2.000 al pasar de crucero a frenada, que es el
+    `cubic-bezier(.333, .667, .667, 1)` con su 2.003. Si se cambia el recorrido o
+    la duración hay que rehacer esta cuenta: descuadrarla es exactamente lo
+    que se ve como un tirón a mitad de camino.
   */
   @media (min-width: 901px) {
     .lt-motion {
@@ -353,15 +365,15 @@ const logoMask = mask.src;
     }
     @keyframes ltRoll {
       /* Asoma sobre el titular, ya rodando: no se planta ahí de golpe. */
-      0%   { opacity: 0; transform: translate3d(-185%, 0, 0) rotate(-212deg);
-             animation-timing-function: cubic-bezier(.4, 0, .7, .62); }
-      7%   { opacity: 1; transform: translate3d(-170%, 0, 0) rotate(-194.8deg);
+      0%   { opacity: 0; transform: translate3d(-260%, 0, 0) rotate(-297.9deg);
+             animation-timing-function: cubic-bezier(.4, 0, .72, .6); }
+      6%   { opacity: 1; transform: translate3d(-246%, 0, 0) rotate(-281.9deg);
              animation-timing-function: linear; }
-      55%  { opacity: 1; transform: translate3d(-39%, 0, 0) rotate(-44.7deg);
-             animation-timing-function: cubic-bezier(.2, .38, .6, 1); }
-      84%  { transform: translate3d(2.6%, 0, 0) rotate(3deg);
+      70%  { opacity: 1; transform: translate3d(-33.9%, 0, 0) rotate(-38.8deg);
+             animation-timing-function: cubic-bezier(.333, .667, .667, 1); }
+      92%  { transform: translate3d(2.6%, 0, 0) rotate(3deg);
              animation-timing-function: cubic-bezier(.4, 0, .62, .86); }
-      93%  { transform: translate3d(-1.2%, 0, 0) rotate(-1.4deg);
+      96.5% { transform: translate3d(-1.2%, 0, 0) rotate(-1.4deg);
              animation-timing-function: cubic-bezier(.33, .3, .6, 1); }
       100% { transform: translate3d(0, 0, 0) rotate(0deg); }
     }
@@ -371,9 +383,9 @@ const logoMask = mask.src;
       dos transformaciones se componen y no hay ni un fotograma de logotipo
       parado entre una cosa y la otra. Ahí es donde se notaría el parón.
     */
-    .hero-gs-inner { animation-delay: 2900ms; }
+    .hero-gs-inner { animation-delay: 4050ms; }
     /* El reflejo barre cuando la pintura ya está quieta, no antes. */
-    .gloss-band { animation-delay: 3800ms; }
+    .gloss-band { animation-delay: 5100ms; }
   }
 
   @media (max-width: 900px) {
