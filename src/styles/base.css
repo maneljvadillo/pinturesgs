@@ -25,18 +25,28 @@ button, input, select, textarea { font: inherit; color: inherit; }
 section { position: relative; }
 
 h1, h2, h3 {
-  font-family: var(--display);
+  font-family: var(--serif);
   font-weight: 500;
   line-height: 1.02;
   letter-spacing: -0.01em;
   text-wrap: balance;
   /*
-    Bricolage Grotesque es variable y tiene eje `opsz`: dibuja las letras de
-    otra forma a cuerpo de titular que a cuerpo de tarjeta. Se deja en
-    automático a propósito (`font-optical-sizing` va en auto por defecto):
-    el navegador escoge el corte según el `font-size` de cada nivel, que es
-    justo lo que queremos con h1 gigantes y h3 de una línea.
+    ── El tamaño óptico, fijado a mano ──────────────────────────────────
+    Fraunces es una fuente variable con eje `opsz`: no dibuja las letras
+    igual a cuerpo pequeño que a cuerpo de titular. Dejándolo en automático,
+    el navegador escoge el corte extremo, y en ese corte la `f` pierde el
+    travesaño: queda un palo con un gancho torcido que no se lee como una
+    efe. En "Transformamos" cantaba muchísimo.
+
+    Comparado en pantalla a tamaño real: con `opsz` en automático la efe sale
+    sin travesaño; fijándolo entre 16 y 24 aparece y la letra se lee bien. Se
+    elige 24 porque conserva la elegancia del corte de titular sin llegar al
+    punto donde el trazo fino desaparece.
+
+    Sólo afecta a los titulares (serif). El texto corrido usa Inter, que no
+    tiene este eje.
   */
+  font-variation-settings: 'opsz' 24;
 }
 
 /* ── Accesibilidad ────────────────────────────────────────────────────── */
