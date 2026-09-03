@@ -69,7 +69,7 @@
   --accent-ink: var(--terracotta);
 
   /* ── Tipografía ────────────────────────────────────────────────────── */
-  --serif: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --serif: 'Playfair Display', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   /* ── Ritmo ─────────────────────────────────────────────────────────── */

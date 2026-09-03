@@ -26,27 +26,15 @@ section { position: relative; }
 
 h1, h2, h3 {
   font-family: var(--serif);
-  font-weight: 500;
+  /*
+    600 y no 500: Playfair es de contraste alto y a peso medio los trazos
+    finos se afinan de más en pantalla. En 600 el titular aguanta el cuerpo
+    grande del hero sin engordar los cuerpos pequeños de las tarjetas.
+  */
+  font-weight: 600;
   line-height: 1.02;
   letter-spacing: -0.01em;
   text-wrap: balance;
-  /*
-    ── El tamaño óptico, fijado a mano ──────────────────────────────────
-    Fraunces es una fuente variable con eje `opsz`: no dibuja las letras
-    igual a cuerpo pequeño que a cuerpo de titular. Dejándolo en automático,
-    el navegador escoge el corte extremo, y en ese corte la `f` pierde el
-    travesaño: queda un palo con un gancho torcido que no se lee como una
-    efe. En "Transformamos" cantaba muchísimo.
-
-    Comparado en pantalla a tamaño real: con `opsz` en automático la efe sale
-    sin travesaño; fijándolo entre 16 y 24 aparece y la letra se lee bien. Se
-    elige 24 porque conserva la elegancia del corte de titular sin llegar al
-    punto donde el trazo fino desaparece.
-
-    Sólo afecta a los titulares (serif). El texto corrido usa Inter, que no
-    tiene este eje.
-  */
-  font-variation-settings: 'opsz' 24;
 }
 
 /* ── Accesibilidad ────────────────────────────────────────────────────── */
