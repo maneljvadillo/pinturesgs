@@ -69,7 +69,10 @@
   --accent-ink: var(--terracotta);
 
   /* ── Tipografía ────────────────────────────────────────────────────── */
-  --serif: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  /* La letra de los titulares. Se llama `display` y no `serif` porque no lo es:
+     Bricolage Grotesque es una grotesca con carácter, elegida para que los
+     titulares se lean limpios a cuerpo grande. */
+  --display: 'Bricolage Grotesque', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   /* ── Ritmo ─────────────────────────────────────────────────────────── */
